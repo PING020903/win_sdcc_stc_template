@@ -69,6 +69,31 @@ build.bat rebuild    :: 全量重建（头文件中的调用约定变化时必�
 
 产物为 `output/` 下的 hex 文件。
 
+## clangd 代码索引
+
+SDCC 本身不带 IDE 能力；本工程接入 clangd，在编辑器中获得代码补全、跳转定义、查找引用等体验
+（clangd 只辅助读写代码——类型检查由 clang 完成，与 SDCC 语义并非完全一致，诊断噪音已在 `.clangd` 中关闭）。
+
+### 安装
+
+1. LLVM（含 clangd），winget 一键安装：
+
+   ```powershell
+   winget install --id LLVM.LLVM -e
+   ```
+
+2. 编辑器扩展（以 VS Code 为例）：安装 **clangd** 扩展（`llvm-vs-code-extensions.vscode-clangd`），
+   按提示禁用 Microsoft C/C++ 的 IntelliSense（两者冲突）。
+
+### 工作方式
+
+- 构建系统在 `build/` 目录生成 clang 友好的 `compile_commands.json`（SDCC 构建走 custom command，
+  CMake 原生导出抓取不到，由 `CMakeLists.txt` 末尾手工生成），clangd 自动发现该文件
+- 数据库中的包含路径与宏定义是 SDCC 构建的"clang 视角"：引用 `C:\Program Files\SDCC\include\mcs51`
+  取得 `__sfr` / `__sbit` 等关键字定义；若 SDCC 安装位置不同，相应修改 `CMakeLists.txt` 末尾 CDB 段落的路径
+- `.clangd` 为工程级配置（关闭诊断噪音、开启后台索引）；`.clang-format` 统一代码风格（LLVM 基底、4 空格缩进、120 列）
+- 增删源文件后重跑 `build.bat`（或重新 configure）刷新 `compile_commands.json`
+
 ## 烧录与调试
 
 - 用 STC-ISP / AiCube-ISP 烧录 hex（冷启动：断电再上电或按复位键）

@@ -1,4 +1,4 @@
-# clangd config for the STC12 door lock project.
+# clangd config for the STC12 template project.
 #
 # Per-file compile flags come from compile_commands.json, which CMake generates
 # into the build directory (see the bottom of CMakeLists.txt) as a clang-friendly
