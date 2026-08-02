@@ -58,24 +58,27 @@ static void cmd_reset(void *arg)
 void cmds_poll(void)
 {
     static uint16_t pollCnt = 0;
-    int16_t c;
-    uint8_t len = 0;
+    uint8_t len;
+    uint8_t i;
+    uint8_t j = 0;
 
     if (++pollCnt < CMD_POLL_PERIOD_MS)
         return;
     pollCnt = 0;
 
-    while ((c = userUART_ReadByte()) >= 0) {
-        if (c == '\r' || c == '\n')
-            continue;
-        if (len < (uint8_t)(PARSE_SIZE - 1U))
-            cmdBuf[len++] = (char)c;
-    }
+    len = userUART_ReadBuffer((uint8_t *)cmdBuf, (uint8_t)(PARSE_SIZE - 1U));
+    if (len == 0)
+        return;
 
-    if (len > 0) {
-        cmdBuf[len] = '\0';
-        cmdTree_CommandParse(cmdBuf);
+    for (i = 0; i < len; i++) {             /* drop CR/LF in place */
+        if (cmdBuf[i] != '\r' && cmdBuf[i] != '\n')
+            cmdBuf[j++] = cmdBuf[i];
     }
+    if (j == 0)
+        return;
+
+    cmdBuf[j] = '\0';
+    cmdTree_CommandParse(cmdBuf);
 }
 
 int cmds_init(void)

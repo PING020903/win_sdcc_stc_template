@@ -9,5 +9,6 @@ void userUART_WriteString(const char *s);
 void userUART_FlushTx(void);
 uint8_t userUART_Available(void);
 int16_t userUART_ReadByte(void);
+uint8_t userUART_ReadBuffer(uint8_t *buf, uint8_t maxLen);
 
 #endif /* _USERUART_INIT_H_ */

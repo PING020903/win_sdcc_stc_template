@@ -116,6 +116,18 @@ int16_t userUART_ReadByte(void)
     return (int16_t)c;
 }
 
+/* Drain up to maxLen bytes from the RX FIFO in one call (ringBuf_pop_multi).
+ * Returns the number of bytes actually read. */
+uint8_t userUART_ReadBuffer(uint8_t *buf, uint8_t maxLen)
+{
+    ringbuf_cnt_t cnt = 0;
+
+    if (!buf || maxLen == 0)
+        return 0;
+    ringBuf_pop_multi(&rxFifo, buf, maxLen, &cnt);
+    return (uint8_t)cnt;
+}
+
 /* Retarget SDCC's printf to UART1 (used by DBG_macro.h). */
 int putchar(int c)
 {
