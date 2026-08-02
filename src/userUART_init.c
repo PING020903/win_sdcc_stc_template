@@ -34,9 +34,7 @@
 #define UART1_RELOAD  ((uint8_t)(256U - (MCU_FREQ / USER_DEFAULT_BAUDRATE / 32UL)))
 #endif
 
-/* 16 (not 32): XRAM budget after the CommandParse component moved in.
- * TX blocking in userUART_WriteByte absorbs the smaller FIFO. */
-#define UART_BUF_DEPTH  16U
+#define UART_BUF_DEPTH  32U
 
 static uint8_t rxStorage[UART_BUF_DEPTH];
 static uint8_t txStorage[UART_BUF_DEPTH];

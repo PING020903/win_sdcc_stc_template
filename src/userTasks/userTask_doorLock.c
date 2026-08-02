@@ -186,7 +186,9 @@ static void doorLockTask(EventSchedul_EventId evt, void *arg) REENTRANT {
     switch (evt) {
     case EVT_DOORLOCK_TICK:
         board_bus_poll();
+#if 0 /* TEMP: command tree disabled for isolation testing */
         cmds_poll();
+#endif
         doorLockTask_handleTick();
         doorLockTask_handleButton();
         break;

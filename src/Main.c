@@ -61,11 +61,13 @@ int main(void)
     doorLockTask_init();
     board_registerDoors(doorLockTask_manager());
 
+#if 0 /* TEMP: command tree disabled for isolation testing */
     if (cmds_init() != 0) {
         ERROR_PRINT("cmds_init failed");
         while (1)
             ;
     }
+#endif
 
     DEBUG_PRINT("doorLock ready, doors=%u", (unsigned int)doorLockTask_manager()->doorCnt);
 

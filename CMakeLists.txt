@@ -72,7 +72,8 @@ set(APP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/doorLock.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userButton.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_doorLock.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_cmds.c
+    # TEMP: command tree disabled for isolation testing
+    # ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_cmds.c
 )
 
 # Ported framework components
@@ -81,8 +82,9 @@ set(COMP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/EventScheduling/EventSchedul.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/BUS_IO_management/bus_io_management.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/debounce/debounce.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/CommandParseTree.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/cmdUserStringParser.c
+    # TEMP: command tree disabled for isolation testing
+    # ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/CommandParseTree.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/cmdUserStringParser.c
 )
 
 # uni-STC HAL modules actually used (timer/uart use direct SFRs)
