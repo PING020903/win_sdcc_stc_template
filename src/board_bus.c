@@ -250,19 +250,18 @@ void board_registerDoors(doorLock_manager_t *mgr)
     }
 }
 
-doorLock_err_t board_doorDetect(const doorLock_context_t *ctx) REENTRANT
+doorLock_err_t board_doorDetect(doorLock_context_t *ctx) REENTRANT
 {
     GpioConfig cfg;
     uint8_t level;
-    doorLock_context_t *mctx = (doorLock_context_t *)ctx;
 
     io_to_cfg(&ctx->hw.io.detect, GPIO_HIGH_IMPEDANCE_MODE, &cfg);
     level = gpioRead(&cfg);
 
     if (level)
-        doorLock_setWire(mctx);   /* line idle (high) */
+        doorLock_setWire(ctx);   /* line idle (high) */
     else
-        doorLock_clrWire(mctx);   /* line triggered (low) */
+        doorLock_clrWire(ctx);   /* line triggered (low) */
 
     return doorLock_err_none;
 }

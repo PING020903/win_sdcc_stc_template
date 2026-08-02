@@ -37,7 +37,9 @@ typedef enum {
     doorLock_err_full,
 } doorLock_err_t;
 
-typedef doorLock_err_t (*doorLock_detectFn)(const doorLock_context_t *ctx) REENTRANT;
+/* detect 读取硬件并更新上下文的 WIRE 状态，故 ctx 非 const；
+ * lock 只驱动输出、不修改上下文，保持 const。 */
+typedef doorLock_err_t (*doorLock_detectFn)(doorLock_context_t *ctx) REENTRANT;
 typedef doorLock_err_t (*doorLock_lockFn)(const doorLock_context_t *ctx, unsigned char lock) REENTRANT;
 typedef doorLock_err_t (*doorLock_doorInitFn)(doorLock_context_t *ctx) REENTRANT;
 

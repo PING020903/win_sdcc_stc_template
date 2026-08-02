@@ -14,7 +14,7 @@ void board_registerDoors(doorLock_manager_t *mgr);
 void board_bus_poll(void);
 
 /* doorLock hardware callbacks. */
-doorLock_err_t board_doorDetect(const doorLock_context_t *ctx) REENTRANT;
+doorLock_err_t board_doorDetect(doorLock_context_t *ctx) REENTRANT;
 doorLock_err_t board_doorLockCtrl(const doorLock_context_t *ctx, unsigned char lock) REENTRANT;
 
 #endif /* _BOARD_BUS_H_ */
