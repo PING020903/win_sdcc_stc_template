@@ -103,11 +103,20 @@ clangd --version
    "C_Cpp.intelliSenseEngine": "disabled"
    ```
 
-3. **指向 clangd**：LLVM 已在 PATH 中时扩展会自动找到；找不到时在 `settings.json` 显式指定：
+3. **让扩展找到 clangd**。clangd 扩展按以下顺序查找语言服务器程序：
+
+   1. `settings.json` 中的 `clangd.path` 设置（最明确，推荐）
+   2. 扩展自己下载的 clangd（找不到程序时它会弹窗询问是否从 GitHub 下载，国内网络慢，不推荐）
+   3. 系统 PATH
+
+   LLVM 经 winget 静默安装默认**不**写 PATH，所以推荐直接显式指定——Ctrl+Shift+P 执行
+   "Preferences: Open User Settings (JSON)"，加入：
 
    ```json
    "clangd.path": "C:\\Program Files\\LLVM\\bin\\clangd.exe"
    ```
+
+   或者把 `C:\Program Files\LLVM\bin` 加入系统 PATH（"编辑系统环境变量" → "环境变量"），扩展也能自动发现。
 
 4. 重新加载窗口（Ctrl+Shift+P → "Reload Window"）。打开任意 `.c` 文件，底部状态栏出现
    "clangd: idle" 即接入成功，后台索引完成后补全、跳转定义即可用；异常时查看"输出 → clangd"面板的日志。
