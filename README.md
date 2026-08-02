@@ -2,9 +2,11 @@
 
 Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + SDCC** 模板工程，基于 [uni-STC](https://codeberg.org/20-100/uni-STC) 开源寄存器定义与 HAL 库构建。
 
-STC 官方工具链长期围绕 Keil μVision，存在商业授权风险；本工程演示了一条完全免费的替代路径：SDCC（GPL）+ CMake + Ninja。uni-STC 此前由 Makefile 驱动、以 Linux 环境为主，本工程为其补齐了 Windows + CMake + Ninja 的完整工作流——对 uni-STC 的工程化落地又是一大进步。
+在国内高校电子相关专业的单片机课程中，STC51 系列是被广泛使用的入门平台，课堂通常配套 Keil μVision。但 Keil 是商业软件，存在授权风险；本工程为入门学习者和业余开发者提供一条完全免费的替代路径：SDCC（GPL 编译器）+ CMake + Ninja，并沉淀为可直接套用的模板。uni-STC 此前由 Makefile 驱动、以 Linux 环境为主，本工程为其补齐了 Windows + CMake + Ninja 的完整工作流——对 uni-STC 的工程化落地又是一大进步。
 
 开箱即含：系统节拍（Timer0 1 ms）、中断驱动 UART 控制台（printf 重定向）、事件调度框架、环形缓冲、IO 消抖等嵌入式常用基础设施，适合作为新 STC12 项目的起点。
+
+**适合谁**：刚学完 C 语言基础、开始学单片机的学生，以及想脱离 Keil 的个人开发者。不需要预先掌握单片机知识——本工程自身就是一个涵盖定时器、串口、中断与事件框架的完整示例，所用工具下文都会从零介绍。
 
 ## 特性
 
@@ -47,6 +49,13 @@ STC 官方工具链长期围绕 Keil μVision，存在商业授权风险；本�
 
 ## 环境搭建（Windows）
 
+先认识工具链里各角色的分工——Keil 里点一下"编译"完成的事，这里由几个免费工具各司其职：
+
+- **SDCC**：编译器，把 C 代码翻译成单片机能运行的机器码（替代 Keil C51 编译器）
+- **CMake**：工程描述工具，读取 `CMakeLists.txt` 生成构建脚本（替代 Keil 的工程文件管理）
+- **Ninja**：构建执行器，按脚本完成编译、链接（替代 Keil 的 F7）
+- **clangd**（可选）：编辑器里的代码助手，提供补全与跳转定义
+
 CMake 和 Ninja 均可用 winget 一键安装：
 
 ```powershell
@@ -68,6 +77,19 @@ build.bat rebuild    :: 全量重建（头文件中的调用约定变化时必�
 ```
 
 产物为 `output/` 下的 hex 文件。
+
+## 从 Keil 迁移
+
+课堂上用惯 Keil 的话，对照关系如下：
+
+| Keil μVision | 本工程 |
+|---|---|
+| 工程文件（.uvprojx） | `CMakeLists.txt`（纯文本，可进版本库） |
+| F7 编译 | `build.bat` |
+| Output 目录里的 .hex | `output/` 下的 .hex |
+| STC-ISP 烧录 | 完全相同 |
+| reg52.h / STC 官方 Keil 头文件 | uni-STC 头文件（SDCC 语法，见 `uni-stc/include`） |
+| 编辑器代码补全 | clangd（见下文） |
 
 ## clangd 代码索引
 
