@@ -76,10 +76,14 @@ SDCC 需要自行到网上下载 Windows 安装程序（本项目基于 SDCC 4.x
 ```bat
 build.bat            :: 首次自动 configure，之后增量构建
 build.bat clean      :: 清理构建目录
-build.bat rebuild    :: 全量重建（头文件中的调用约定变化时必须全量重编）
+build.bat rebuild    :: 清理后从零全量重建
 ```
 
 产物为 `output/` 下的 hex 文件。
+
+构建系统会跟踪头文件依赖：修改任何头文件都会自动触发全部模块重编
+（SDCC 的预处理器无法生成可用的细粒度依赖文件，故采用"整集头文件依赖"）；
+只修改 `.c` 文件时保持增量编译（仅重编该文件 + 重新链接）。
 
 ## 从 Keil 迁移
 
