@@ -26,6 +26,8 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 
 更换型号/封装时只需调整 `CMakeLists.txt` 中的 `MCU_VARIANT` / `MCU_FREQ_HZ` 与容量参数；uni-STC 对 STC12/15/8 各系列均提供对应头文件。
 
+**适用范围**：SDCC 与 uni-STC 仅覆盖 8051 内核的 STC 系列（STC8/12/15/90 等）；C251（MCS-251）内核的新型号（STC16、STC32 系列）SDCC 没有对应后端，uni-STC 也明确不支持（见 `uni-stc/README`），这类芯片目前只能使用 Keil C251。
+
 ## 目录结构
 
 ```
