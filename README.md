@@ -71,19 +71,46 @@ build.bat rebuild    :: 全量重建（头文件中的调用约定变化时必�
 
 ## clangd 代码索引
 
-SDCC 本身不带 IDE 能力；本工程接入 clangd，在编辑器中获得代码补全、跳转定义、查找引用等体验
-（clangd 只辅助读写代码——类型检查由 clang 完成，与 SDCC 语义并非完全一致，诊断噪音已在 `.clangd` 中关闭）。
+SDCC 本身不带 IDE 能力；本工程接入 clangd，在编辑器中获得代码补全、跳转定义、查找引用等体验。
+先理清分工：**真正干活的是安装在系统里的 clangd 程序**（语言服务器，随 LLVM 提供），
+编辑器扩展只是连接它的"客户端"——只装扩展、不装程序是不会生效的。
+（clangd 只辅助读写代码——语义检查由 clang 完成，与 SDCC 语义并非完全一致，诊断噪音已在 `.clangd` 中关闭。）
 
-### 安装
+### 1. 安装 clangd 程序
 
-1. LLVM（含 clangd），winget 一键安装：
+LLVM（含 clangd），winget 一键安装：
 
-   ```powershell
-   winget install --id LLVM.LLVM -e
+```powershell
+winget install --id LLVM.LLVM -e
+```
+
+装完后 `clangd.exe` 位于 `C:\Program Files\LLVM\bin\`。新开一个终端验证：
+
+```powershell
+clangd --version
+```
+
+若提示找不到命令：重装时勾选"Add LLVM to the system PATH"，或手工把上述目录加入系统 PATH。
+
+### 2. VS Code 接入 clangd
+
+1. 扩展市场安装 **clangd** 扩展（`llvm-vs-code-extensions.vscode-clangd`）。
+2. **处理冲突**：微软 **C/C++** 扩展（`ms-vscode.cpptools`）的 IntelliSense 与 clangd 冲突。
+   首次启用 clangd 扩展时右下角会弹出提示，点击 **"Disable IntelliSense"** 即可；
+   若没弹或错过了，在 `settings.json` 里手动关闭（cpptools 扩展可以保留用于调试，只关它的智能提示）：
+
+   ```json
+   "C_Cpp.intelliSenseEngine": "disabled"
    ```
 
-2. 编辑器扩展（以 VS Code 为例）：安装 **clangd** 扩展（`llvm-vs-code-extensions.vscode-clangd`），
-   按提示禁用 Microsoft C/C++ 的 IntelliSense（两者冲突）。
+3. **指向 clangd**：LLVM 已在 PATH 中时扩展会自动找到；找不到时在 `settings.json` 显式指定：
+
+   ```json
+   "clangd.path": "C:\\Program Files\\LLVM\\bin\\clangd.exe"
+   ```
+
+4. 重新加载窗口（Ctrl+Shift+P → "Reload Window"）。打开任意 `.c` 文件，底部状态栏出现
+   "clangd: idle" 即接入成功，后台索引完成后补全、跳转定义即可用；异常时查看"输出 → clangd"面板的日志。
 
 ### 工作方式
 
