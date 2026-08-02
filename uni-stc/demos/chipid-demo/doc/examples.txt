@@ -1,0 +1,89 @@
+*** Memory dump examples ***********************************************
+
+--- STC8A8K64S4A12-28I-LQFP48 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f6 28 c4 aa 0b f6 5a
+
+--- STC8A8K64D4-45I-LQFP48 ---
+XDATA block
+0000 f7 f4 c4 3f 13 bd d6 04 9f 89 cb 3a 5c 16 91 c8
+0010 ff 53 6e 86 ba 1d 20 1c 19 00 fe 22 01 14 80 5a
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 f4 c4 3f 13 bd d6
+
+--- STC8G1K08A-36I-DIP8 ---
+CODE block
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 94 c5 da 0f b5 39
+
+--- STC8G1K08-38I-TSSOP20 ---
+CODE block
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 54 c5 e2 0c 96 b6
+
+--- STC8G1K17-38I-DIP16 ---
+CODE block
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 57 c4 0b 01 00 fa
+
+--- STC8G2K64S4-36I-LQFP48 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 64 c3 e7 03 7d a2
+
+--- STC8H1K08-36I-TSSOP20 ---
+CODE block
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 34 c5 e3 10 18 09
+
+--- STC8H1K28-36I-LQFP32 ---
+CODE block
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 24 c5 65 0c 7b 67
+
+--- STC8H1K17T-33I-TSSOP20 ---
+XDATA block
+0000 f8 47 c9 7f 00 bc 47 04 a6 89 b2 1b 39 01 69 9b
+0010 d0 37 4f 65 94 1d 20 1c 18 00 44 23 04 21 32 5a
+
+--- STC8H2K17U-45I-TSSOP20 ---
+XDATA block
+0000 f8 97 c9 eb 06 88 1f 04 a8 8a 61 21 41 71 a4 da
+0010 3c 4d 6a 93 b8 1c 20 1b 18 00 44 24 01 05 32 5a
+
+--- STC8H3K64S2-45I-TSSOP20 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 4c c5 51 09 05 a4
+
+--- STC8H3K64S4-45I-LQFP32 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f7 44 c5 98 0c bf 33
+
+--- STC8H4K64TL-45I-TSSOP20 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f8 34 c5 04 10 e7 14
+
+--- STC8H4K64TL-45I-LQFP32 ---
+CODE block - 512
+0000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+0010 ff ff ff ff ff ff ff ff ff f8 34 c5 31 0f aa 76
+
+--- STC8H8K64U-45I-PDIP40 ---
+XDATA block
+0000 f7 84 c9 0f 00 80 72 04 a3 8c 6e 22 40 72 a4 da
+0010 3e 56 6d 95 bb 1f 22 1e 1a 00 fe 22 04 20 60 5a
+
+*** Program output example *********************************************
+
+CHIP_GUID: F7 84 C9 0F 00 80 72
+CHIP_PART_ID: F784
+INTERNAL_VOLTAGE_REF: 1187 mV
+WKT_FREQ: 35950 Hz
+IRTRIM_22_1184MHz: 22
+IRTRIM_24MHz: 40
+Program/EEPROM split address: FE00

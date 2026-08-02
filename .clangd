@@ -1,0 +1,18 @@
+# clangd config for the STC12 door lock project.
+#
+# Per-file compile flags come from compile_commands.json, which CMake generates
+# into the build directory (see the bottom of CMakeLists.txt) as a clang-friendly
+# view of the SDCC build. clangd auto-discovers build/compile_commands.json.
+# Re-run cmake (or `build.bat rebuild`) after adding/removing source files.
+#
+# This file only holds editor-side settings.
+
+Diagnostics:
+  UnusedIncludes: None
+  MissingIncludes: None
+
+InlayHints:
+  Enabled: No
+
+Index:
+  Background: Build

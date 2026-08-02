@@ -1,0 +1,18 @@
+# Track only the listed directories and files; ignore everything else
+# (build/, output/, .cache/, compile_commands.json, editor junk, ...).
+
+# Ignore all top-level entries by default...
+/*
+
+# ...then whitelist what we want in the repo.
+!/compoent/
+!/src/
+!/uni-stc/
+
+!/build.bat
+!/CMakeLists.txt
+!/.clang-format
+!/.clangd
+
+# Keep this file itself tracked.
+!/.gitignore

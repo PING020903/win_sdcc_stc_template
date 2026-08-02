@@ -1,0 +1,20 @@
+#ifndef _STC8G2KxxS4_LQFP48_H
+#define _STC8G2KxxS4_LQFP48_H
+
+#define MCU_FAMILY 8
+#define MCU_SERIES 'G'
+#define MCU_PINS 48
+#define MCU_MAX_FREQ_MHZ 36
+#define CHIPID_IN_CODE
+#define MCU_HAS_COMPARATOR
+#define MCU_HAS_MDU
+#define NB_UARTS 4
+#define PWM_GROUPS 6
+#define PWM_CHANNELS 8
+#define ADC_CHANNELS 15
+#define NB_TIMERS 5
+#define TIMER_HAS_PRESCALERS
+
+#include <uni-STC/stcmcu.h>
+
+#endif // _STC8G2KxxS4_LQFP48_H
