@@ -99,5 +99,5 @@ build.bat rebuild    :: 全量重建（头文件中的调用约定变化时必�
 
 ## 许可
 
-`uni-stc/` 目录为 [uni-STC](https://codeberg.org/20-100/uni-STC) 开源库的 vendored 副本，遵循 BSD-3-Clause；
-项目其余代码暂未指定许可证。
+本项目以 [MIT 许可证](LICENSE) 发布；`uni-stc/` 目录为 [uni-STC](https://codeberg.org/20-100/uni-STC)
+开源库的 vendored 副本，遵循其自身的 BSD-3-Clause。

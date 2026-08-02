@@ -15,6 +15,7 @@
 !/.clangd
 
 !/README.md
+!/LICENSE
 !/tips.txt
 
 # Keep this file itself tracked.
