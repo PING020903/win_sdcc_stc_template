@@ -31,8 +31,9 @@
  * only two general external interrupts — INT0 (P3.2) and INT1 (P3.3) — and no
  * per-pin GPIO edge interrupts (that is an STC8/STC15 feature). With 4 door
  * sensors + 4 door buttons + 4 config keys, per-pin interrupts are impossible
- * on this part, so board_bus_poll() samples all inputs every 10 ms (timed from
- * the 1 ms tick) and debounces them (3 stable samples = 30 ms) before emitting
+ * on this part, so the door-lock task calls board_bus_poll() from its 1 ms
+ * TICK event handler; the function rate-limits itself to one sample every
+ * 10 ms and debounces inputs (3 stable samples = 30 ms) before emitting
  * an event on the debounced EDGE. Debouncing + edge triggering together prevent
  * contact bounce from producing duplicate events. Door-lock events are
  * human-paced, so polling is fully responsive here.

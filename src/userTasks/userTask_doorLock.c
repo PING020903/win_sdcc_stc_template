@@ -1,5 +1,6 @@
 #include "DBG_macro.h"
 #include "userTask_doorLock.h"
+#include "board_bus.h"
 #include "tickBroadcast.h"
 #include "userTask_cmds.h"
 
@@ -184,6 +185,7 @@ static void doorLockTask(EventSchedul_EventId evt, void *arg) REENTRANT {
 
     switch (evt) {
     case EVT_DOORLOCK_TICK:
+        board_bus_poll();
         doorLockTask_handleTick();
         doorLockTask_handleButton();
         break;
