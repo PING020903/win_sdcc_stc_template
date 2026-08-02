@@ -256,7 +256,7 @@ doorLock_err_t board_doorDetect(const doorLock_context_t *ctx) REENTRANT
     uint8_t level;
     doorLock_context_t *mctx = (doorLock_context_t *)ctx;
 
-    io_to_cfg(&ctx->hw.io.detect, GPIO_BIDIRECTIONAL_MODE, &cfg);
+    io_to_cfg(&ctx->hw.io.detect, GPIO_HIGH_IMPEDANCE_MODE, &cfg);
     level = gpioRead(&cfg);
 
     if (level)
