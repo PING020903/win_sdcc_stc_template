@@ -28,7 +28,7 @@ doorLock_err_t doorLock_register(doorLock_manager_t *mgr, const doorLock_hwConfi
 
 doorLock_err_t doorLock_detect(doorLock_context_t *ctx)
 {
-    if (!doorLock_isInit(ctx))
+    if (!ctx || !doorLock_isInit(ctx))
         return doorLock_err_not_init;
 
     if (!ctx->hw.ops || !ctx->hw.ops->detect)
@@ -39,7 +39,7 @@ doorLock_err_t doorLock_detect(doorLock_context_t *ctx)
 
 doorLock_err_t doorLock_lockCtrl(doorLock_context_t *ctx, unsigned char lock)
 {
-    if (!doorLock_isInit(ctx))
+    if (!ctx || !doorLock_isInit(ctx))
         return doorLock_err_not_init;
 
     if (!ctx->hw.ops || !ctx->hw.ops->lock)
@@ -50,7 +50,7 @@ doorLock_err_t doorLock_lockCtrl(doorLock_context_t *ctx, unsigned char lock)
 
 doorLock_err_t doorLock_requestOpen(doorLock_manager_t *mgr, unsigned char doorIdx)
 {
-    if (doorIdx >= mgr->doorCnt)
+    if (!mgr || doorIdx >= mgr->doorCnt)
         return doorLock_err_io_invalid;
 
     doorLock_context_t *target = &mgr->doors[doorIdx];

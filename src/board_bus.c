@@ -255,6 +255,9 @@ doorLock_err_t board_doorDetect(doorLock_context_t *ctx) REENTRANT
     GpioConfig cfg;
     uint8_t level;
 
+    if (!ctx || !doorLock_isInit(ctx))
+        return doorLock_err_not_init;
+
     io_to_cfg(&ctx->hw.io.detect, GPIO_HIGH_IMPEDANCE_MODE, &cfg);
     level = gpioRead(&cfg);
 
@@ -269,6 +272,10 @@ doorLock_err_t board_doorDetect(doorLock_context_t *ctx) REENTRANT
 doorLock_err_t board_doorLockCtrl(const doorLock_context_t *ctx, unsigned char lock) REENTRANT
 {
     GpioConfig cfg;
+
+    if (!ctx || !doorLock_isInit(ctx))
+        return doorLock_err_not_init;
+
     io_to_cfg(&ctx->hw.io.lock, GPIO_PUSH_PULL_MODE, &cfg);
     gpioWrite(&cfg, lock ? 1 : 0);
     return doorLock_err_none;
