@@ -90,21 +90,12 @@ set(HAL_SRCS
 set(OBJ ${CMAKE_CURRENT_BINARY_DIR}/obj)
 file(MAKE_DIRECTORY ${OBJ})
 
-# Header dependency tracking: SDCC's sdcpp cannot emit usable depfiles, so
-# Ninja has no way to know which modules a header edit invalidates (stale
-# objects once broke a link with undefined PARM_2 symbols). Every compile
-# therefore depends on the whole project header set: a header edit recompiles
-# all modules automatically, while .c-only edits stay incremental.
-# CONFIGURE_DEPENDS re-globs on each build, so newly added headers are picked
-# up without a manual reconfigure.
-file(GLOB_RECURSE PROJECT_HEADERS CONFIGURE_DEPENDS
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/*.h
-    ${UNISTC}/hal/*.h
-    ${UNISTC}/include/*.h
-)
-
-# Compile a .c into a flattened .rel under ${OBJ}
+# Compile a .c into a flattened .rel under ${OBJ}.
+# Header dependency tracking: SDCC's native -MMD writes a make-style depfile
+# (<output>.d) listing every header the module actually includes; Ninja reads
+# it (DEPFILE, requires the Ninja generator) and rebuilds exactly the modules
+# a header edit invalidates. Pass -MMD to sdcc itself, NOT via -Wp — routing
+# it through the preprocessor directly breaks SDCC's pipeline.
 function(sdcc_compile src out_var)
     get_filename_component(name ${src} NAME_WE)
     get_filename_component(dir  ${src} DIRECTORY)
@@ -112,8 +103,9 @@ function(sdcc_compile src out_var)
     set(rel ${OBJ}/${tag}_${name}.rel)
     add_custom_command(
         OUTPUT ${rel}
-        COMMAND ${SDCC} ${CFLAGS} -o ${rel} -c ${src}
-        DEPENDS ${src} ${PROJECT_HEADERS} ${ARGN}
+        COMMAND ${SDCC} ${CFLAGS} -MMD -o ${rel} -c ${src}
+        DEPFILE ${OBJ}/${tag}_${name}.d
+        DEPENDS ${src} ${ARGN}
         COMMENT "CC ${name}.c"
         VERBATIM
     )
