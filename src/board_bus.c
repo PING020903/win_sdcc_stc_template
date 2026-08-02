@@ -27,6 +27,10 @@
  * Inputs are active-low: external pull-up holds the pin high (idle); a 0Ω
  * path (door in place) or a pressed button pulls it low.
  *
+ * Button/UART resources are brought up by their bus init callbacks; door IO
+ * is configured by board_doorInit() — the door-lock ops->doorInit hook — when
+ * each door registers, so the door-lock driver owns its own hardware setup.
+ *
  * Detection is POLLED, not interrupt-driven, by design: the STC12C5A60S2 has
  * only two general external interrupts — INT0 (P3.2) and INT1 (P3.3) — and no
  * per-pin GPIO edge interrupts (that is an STC8/STC15 feature). With 4 door
@@ -153,18 +157,10 @@ static void io_to_cfg(const busManage_io_t *io, GpioPinMode mode, GpioConfig *ou
 
 static int door_busInit(const busManage_resource_desc_t *res) REENTRANT
 {
-    const busManage_io_t *io = res->desc.custom.io_table;
-    GpioConfig cfg;
-
-    io_to_cfg(&io[0], GPIO_HIGH_IMPEDANCE_MODE, &cfg);   /* 门磁 detect：浮空输入 */
-    gpioConfigure(&cfg);
-
-    io_to_cfg(&io[1], GPIO_HIGH_IMPEDANCE_MODE, &cfg);   /* 门按键 door-button：浮空输入 */
-    gpioConfigure(&cfg);
-
-    io_to_cfg(&io[2], GPIO_PUSH_PULL_MODE, &cfg);        /* 继电器 relay output */
-    gpioConfigure(&cfg);
-    gpioWrite(&cfg, 1);                                  /* start locked */
+    /* Door IO is configured by board_doorInit() (ops->doorInit) when each
+     * door registers with the door-lock manager; nothing to do at bus
+     * allocation time. */
+    (void)res;
     return 0;
 }
 
@@ -225,12 +221,31 @@ int board_bus_init(void)
     return 0;
 }
 
+/* Per-door hardware init, invoked by doorLock_register() via ops->doorInit.
+ * Pin assignments come from the io table copied into ctx->hw at registration
+ * (ultimately from the door*_io tables above — the single source of truth). */
+static doorLock_err_t board_doorInit(doorLock_context_t *ctx) REENTRANT
+{
+    GpioConfig cfg;
+
+    io_to_cfg(&ctx->hw.io.detect, GPIO_HIGH_IMPEDANCE_MODE, &cfg);   /* 门磁 detect：浮空输入 */
+    gpioConfigure(&cfg);
+
+    io_to_cfg(&ctx->hw.io.doorButton, GPIO_HIGH_IMPEDANCE_MODE, &cfg);   /* 门按键 door-button：浮空输入 */
+    gpioConfigure(&cfg);
+
+    io_to_cfg(&ctx->hw.io.lock, GPIO_PUSH_PULL_MODE, &cfg);        /* 继电器 relay output */
+    gpioConfigure(&cfg);
+    gpioWrite(&cfg, 1);                                  /* start locked */
+    return doorLock_err_none;
+}
+
 /* Shared method table: all doors use the same detect/lock callbacks.
  * Stored const (flash); each door's hwConfig only keeps a pointer to it. */
 static const doorLock_ops_t door_ops = {
     .detect   = board_doorDetect,
     .lock     = board_doorLockCtrl,
-    .doorInit = NULL,
+    .doorInit = board_doorInit,
 };
 
 void board_registerDoors(doorLock_manager_t *mgr)

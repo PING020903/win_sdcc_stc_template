@@ -8,6 +8,9 @@ void doorLock_managerInit(doorLock_manager_t *mgr)
 
 doorLock_err_t doorLock_register(doorLock_manager_t *mgr, const doorLock_hwConfig_t *cfg, const busManage_resource_desc_t *res)
 {
+    if (!mgr || !cfg)
+        return doorLock_err_io_invalid;
+
     if (mgr->doorCnt >= DOORLOCK_DOOR_MAX)
         return doorLock_err_full;
 
