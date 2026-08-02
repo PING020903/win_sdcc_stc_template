@@ -78,19 +78,23 @@ SDCC 本身不带 IDE 能力；本工程接入 clangd，在编辑器中获得代
 
 ### 1. 安装 clangd 程序
 
-LLVM（含 clangd），winget 一键安装：
+winget 中有两个可选包（二选一）：
 
 ```powershell
-winget install --id LLVM.LLVM -e
+winget install --id LLVM.clangd -e    # 仅 clangd 语言服务器，轻量（推荐）
+winget install --id LLVM.LLVM -e      # 完整 LLVM 工具链（含 clang/clangd/lld 等，体积大）
 ```
 
-装完后 `clangd.exe` 位于 `C:\Program Files\LLVM\bin\`。新开一个终端验证：
+> 注：LLVM 提供的是 clang 而非 gcc，只是 clang 的命令行与 gcc 高度兼容。
+
+新开一个终端验证：
 
 ```powershell
 clangd --version
 ```
 
-若提示找不到命令：重装时勾选"Add LLVM to the system PATH"，或手工把上述目录加入系统 PATH。
+winget 会把 clangd 的启动链接放在 `%LOCALAPPDATA%\Microsoft\WinGet\Links\`（该目录默认在 PATH 中）；
+若提示找不到命令，检查该目录是否在系统 PATH 里。
 
 ### 2. VS Code 接入 clangd
 
@@ -109,14 +113,15 @@ clangd --version
    2. 扩展自己下载的 clangd（找不到程序时它会弹窗询问是否从 GitHub 下载，国内网络慢，不推荐）
    3. 系统 PATH
 
-   LLVM 经 winget 静默安装默认**不**写 PATH，所以推荐直接显式指定——Ctrl+Shift+P 执行
-   "Preferences: Open User Settings (JSON)"，加入：
+   winget 装的 clangd 启动链接位于 `%LOCALAPPDATA%\Microsoft\WinGet\Links\`，该目录默认在 PATH 中，
+   扩展通常能直接找到；若找不到，Ctrl+Shift+P 执行 "Preferences: Open User Settings (JSON)"，
+   显式指定（把 `<用户名>` 换成你的 Windows 用户名）：
 
    ```json
-   "clangd.path": "C:\\Program Files\\LLVM\\bin\\clangd.exe"
+   "clangd.path": "C:\\Users\\<用户名>\\AppData\\Local\\Microsoft\\WinGet\\Links\\clangd.exe"
    ```
 
-   或者把 `C:\Program Files\LLVM\bin` 加入系统 PATH（"编辑系统环境变量" → "环境变量"），扩展也能自动发现。
+   若装的是完整 LLVM 并加入了 PATH，也可指向 `C:\\Program Files\\LLVM\\bin\\clangd.exe`。
 
 4. 重新加载窗口（Ctrl+Shift+P → "Reload Window"）。打开任意 `.c` 文件，底部状态栏出现
    "clangd: idle" 即接入成功，后台索引完成后补全、跳转定义即可用；异常时查看"输出 → clangd"面板的日志。
