@@ -9,9 +9,9 @@
 typedef struct EventSchedul_Context EventSchedul_Context;
 
 /* STC12 build: tasks live in a fixed pool, no dynamic allocation.
- * Pool sized for the tasks actually used (door-lock + console commands)
- * plus headroom — XRAM only has 1 KB. */
-#define EVTSCHEDUL_TASKS_MAX 4
+ * Pool sized for the single consolidated business task (console command
+ * handling runs inside it) — XRAM only has 1 KB. Raise when adding tasks. */
+#define EVTSCHEDUL_TASKS_MAX 2
 #define EVTSCHEDUL_TASKS_QUEUE_MAX (EVTSCHEDUL_TASKS_MAX * 2)
 
 typedef enum {

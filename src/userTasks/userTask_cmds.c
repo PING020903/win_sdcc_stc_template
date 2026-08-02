@@ -1,14 +1,12 @@
 #include "project-defs.h"
 #include "DBG_macro.h"
 #include "CommandParseTree.h"
-#include "EventSchedul.h"
 #include "reset-hal.h"
-#include "tickBroadcast.h"
 #include "userTask_cmds.h"
 #include "userUART_init.h"
 
 /*
- * Serial console command task (see userTask_cmds.h).
+ * Serial console command handling (see userTask_cmds.h).
  *
  * The cmdTree tokenizer needs a user-supplied allocator
  * (cmd_MemoryAlloc/Free). Its usage pattern is strictly "one live
@@ -40,14 +38,6 @@ void cmd_MemoryFree(void *mem)
 static char lineBuf[PARSE_SIZE];
 static uint8_t lineLen = 0;
 
-typedef enum {
-    CMD_EVT_INIT = 0x0000U,
-    CMD_EVT_TICK = EVT_TICK,
-    CMD_EVT_END,
-} cmdTask_event_t;
-
-static EventSchedul_TaskNode *hTaskCmds = NULL;
-
 /* ---- command handlers ---- */
 
 static void cmd_reset(void *arg)
@@ -60,15 +50,10 @@ static void cmd_reset(void *arg)
         ;
 }
 
-/* ---- task ---- */
-
-static void cmdTask(EventSchedul_EventId evt, void *arg) REENTRANT
+/* Called from the door-lock task's TICK handler (see userTask_doorLock.c). */
+void cmds_poll(void)
 {
     int16_t c;
-
-    (void)arg;
-    if (evt != CMD_EVT_TICK)
-        return;
 
     while ((c = userUART_ReadByte()) >= 0) {
         if (c == '\r' || c == '\n') {
@@ -88,21 +73,8 @@ static void cmdTask(EventSchedul_EventId evt, void *arg) REENTRANT
 
 int cmds_init(void)
 {
-    EventSchedul_TaskNode cfg;
-
     cmdTree_init();
     cmdTree_Register(CMDTREE_ROOT, "reset", cmd_reset, NULL);
     cmdTree_RegisterHelp(CMDTREE_ROOT);
-
-    cfg.pTaskFunc = cmdTask;
-    cfg.pTaskFuncArg = NULL;
-    cfg.info.eventStart = CMD_EVT_INIT + 1;
-    cfg.info.eventEnd = CMD_EVT_END;
-
-    hTaskCmds = EventSchedul_TaskRegister(evtSchedul_ctx, &cfg);
-    if (!hTaskCmds)
-        return -1;
-
-    tickBroadcast_Register(hTaskCmds);
     return 0;
 }

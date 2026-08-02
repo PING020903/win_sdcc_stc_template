@@ -186,6 +186,7 @@ static void doorLockTask(EventSchedul_EventId evt, void *arg) REENTRANT {
     switch (evt) {
     case EVT_DOORLOCK_TICK:
         board_bus_poll();
+        cmds_poll();
         doorLockTask_handleTick();
         doorLockTask_handleButton();
         break;

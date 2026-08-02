@@ -50,7 +50,7 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 3. 业务任务在 TICK 处理中采样 IO（10 ms 限速 + 30 ms 消抖），消抖边沿转为事件投递给调度器，并分频出秒节拍做周期逻辑
 4. 任务内事件回调为纯状态机、不阻塞；诊断输出一律走重定向后的 printf
 5. 调度器 idle 钩子只保留节拍广播这类框架行为，不放任何业务逻辑
-6. 串口命令任务同样消费 `TICK`：从 RX FIFO 攒行（支持退格），整行交给命令树解析执行
+6. 串口命令处理挂在主任务的 TICK 里（`cmds_poll()`）：从 RX FIFO 攒行（支持退格），整行交给命令树解析执行——不单开任务，省 XRAM
 
 ## 环境搭建（Windows）
 
@@ -193,14 +193,14 @@ winget 会把 clangd 的启动链接放在 `%LOCALAPPDATA%\Microsoft\WinGet\Link
 
 | 资源 | 占用 |
 |---|---|
-| XRAM | ~1006 / 1024 B |
+| XRAM | ~938 / 1024 B |
 | IRAM 栈 | 112 B |
 | Flash | ~26 / 56 KB |
 
-XRAM 只剩约 18 B，扩容前先删 TEMP 心跳或继续压缩（调度器任务池
-`EVTSCHEDUL_TASKS_MAX`、命令树 `CMDTREE_STATIC_MAX_NODES`、UART 缓冲
-`UART_BUF_DEPTH` 均已按最小可用配置调过）。注意 `__pdata` 在本板不可用：
-SDCC 的 `movx @Ri` 分页走 P2 口锁存器，而 P2.0–3 接的是继电器。
+XRAM 余量约 86 B。已按最小可用配置调过的旋钮：调度器任务池
+`EVTSCHEDUL_TASKS_MAX`（现为 2，命令处理并入主任务）、命令树
+`CMDTREE_STATIC_MAX_NODES`、UART 缓冲 `UART_BUF_DEPTH`；TEMP 心跳删掉还能再省一点。
+注意 `__pdata` 在本板不可用：SDCC 的 `movx @Ri` 分页走 P2 口锁存器，而 P2.0–3 接的是继电器。
 
 ## 许可
 
