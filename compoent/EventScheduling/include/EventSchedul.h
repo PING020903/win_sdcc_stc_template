@@ -8,8 +8,10 @@
 /* ==================== Scheduler context (opaque, static storage) ==================== */
 typedef struct EventSchedul_Context EventSchedul_Context;
 
-/* STC12 build: tasks live in a fixed pool, no dynamic allocation. */
-#define EVTSCHEDUL_TASKS_MAX 8
+/* STC12 build: tasks live in a fixed pool, no dynamic allocation.
+ * Pool sized for the tasks actually used (door-lock + console commands)
+ * plus headroom — XRAM only has 1 KB. */
+#define EVTSCHEDUL_TASKS_MAX 4
 #define EVTSCHEDUL_TASKS_QUEUE_MAX (EVTSCHEDUL_TASKS_MAX * 2)
 
 typedef enum {

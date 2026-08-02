@@ -34,7 +34,9 @@
 #define UART1_RELOAD  ((uint8_t)(256U - (MCU_FREQ / USER_DEFAULT_BAUDRATE / 32UL)))
 #endif
 
-#define UART_BUF_DEPTH  32U
+/* 16 (not 32): XRAM budget after the CommandParse component moved in.
+ * TX blocking in userUART_WriteByte absorbs the smaller FIFO. */
+#define UART_BUF_DEPTH  16U
 
 static uint8_t rxStorage[UART_BUF_DEPTH];
 static uint8_t txStorage[UART_BUF_DEPTH];
@@ -86,6 +88,17 @@ void userUART_WriteString(const char *s)
 {
     while (*s)
         userUART_WriteByte((uint8_t)*s++);
+}
+
+/* Block until the TX FIFO is drained and the last byte fully shifted out
+ * (txBusy is cleared by the ISR on the final TI). Requires interrupts. */
+void userUART_FlushTx(void)
+{
+    ringbuf_cnt_t cnt;
+
+    do {
+        ringBuf_count(&txFifo, &cnt);
+    } while (cnt > 0 || txBusy);
 }
 
 uint8_t userUART_Available(void)

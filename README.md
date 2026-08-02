@@ -12,6 +12,7 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 
 - 构建：CMake + Ninja 增量编译，自动生成 `compile_commands.json` 供 clangd 索引
 - 控制台：UART1 中断收发 + 环形缓冲 FIFO，SDCC printf 重定向
+- 命令树：cmdTree 静态模式命令解析器（自 CH58x 工程移植，节点数/深度/缓冲区可配），内置 `reset` / `help`
 - 系统节拍：Timer0 1 ms 中断
 - 业务框架：节拍广播 + 事件调度器，任务以事件回调方式组织
 - UART 两套配置 `#if` 切换，便于与 STC 官方例程对照（见技术要点）
@@ -33,7 +34,7 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 ```
 ├── src/                  # 应用层：main、UART/定时器初始化、板级总线、业务任务
 │   └── userTasks/        # 业务任务示例（事件驱动 + 状态机写法）
-├── compoent/             # 通用组件：ringBuffer、事件调度器、总线 IO 管理、消抖、调试宏
+├── compoent/             # 通用组件：ringBuffer、事件调度器、总线 IO 管理、消抖、命令树、调试宏
 ├── uni-stc/              # uni-STC 库 vendored 副本（寄存器定义 + HAL，许可见其 LICENSE）
 ├── tips.txt              # SDCC + STC12 开发笔记
 ├── CMakeLists.txt
@@ -49,6 +50,7 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 3. 业务任务在 TICK 处理中采样 IO（10 ms 限速 + 30 ms 消抖），消抖边沿转为事件投递给调度器，并分频出秒节拍做周期逻辑
 4. 任务内事件回调为纯状态机、不阻塞；诊断输出一律走重定向后的 printf
 5. 调度器 idle 钩子只保留节拍广播这类框架行为，不放任何业务逻辑
+6. 串口命令任务同样消费 `TICK`：从 RX FIFO 攒行（支持退格），整行交给命令树解析执行
 
 ## 环境搭建（Windows）
 
@@ -169,6 +171,9 @@ winget 会把 clangd 的启动链接放在 `%LOCALAPPDATA%\Microsoft\WinGet\Link
 - 用 STC-ISP / AiCube-ISP 烧录 hex（冷启动：断电再上电或按复位键）
 - STC-ISP 的时钟分频选项建议设为 1 分频（固件启动时也会防御性地清零 `CLKDIV`）
 - 串口终端 115200 8N1
+- 错过了开机日志？终端里输入 `reset` 回车即可软复位（写 IAP_CONTR，从用户程序区重启），
+  重新打印完整启动日志——开发板复位按键不好用时的替代手段；`help` 列出全部命令。
+  新增命令：在 `cmds_init()` 里 `cmdTree_Register()` 挂一个 handler 即可（token 必须是字面量）
 
 ## 技术要点（踩坑记录）
 
@@ -188,9 +193,14 @@ winget 会把 clangd 的启动链接放在 `%LOCALAPPDATA%\Microsoft\WinGet\Link
 
 | 资源 | 占用 |
 |---|---|
-| XRAM | ~891 / 1024 B |
+| XRAM | ~1006 / 1024 B |
 | IRAM 栈 | 112 B |
-| Flash | ~20 / 56 KB |
+| Flash | ~26 / 56 KB |
+
+XRAM 只剩约 18 B，扩容前先删 TEMP 心跳或继续压缩（调度器任务池
+`EVTSCHEDUL_TASKS_MAX`、命令树 `CMDTREE_STATIC_MAX_NODES`、UART 缓冲
+`UART_BUF_DEPTH` 均已按最小可用配置调过）。注意 `__pdata` 在本板不可用：
+SDCC 的 `movx @Ri` 分页走 P2 口锁存器，而 P2.0–3 接的是继电器。
 
 ## 许可
 

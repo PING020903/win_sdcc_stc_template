@@ -6,6 +6,7 @@
 void userUART_init(void);
 void userUART_WriteByte(uint8_t c);
 void userUART_WriteString(const char *s);
+void userUART_FlushTx(void);
 uint8_t userUART_Available(void);
 int16_t userUART_ReadByte(void);
 

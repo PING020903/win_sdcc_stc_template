@@ -2,15 +2,22 @@
 #define _USERTASK_CMDS_H_
 
 /*
- * Stub of the original command task header.
+ * Serial console command task.
  *
- * The CH58x project's command parser (CommandParse / AnyProtocolParser) is
- * too heavy for the STC12 and is not part of this build. Only the shared
- * scheduler globals that other modules reference are kept here.
+ * Bytes received by the UART1 ISR land in the RX FIFO; this task drains
+ * them on every 1 ms tick, assembles lines and feeds complete lines to
+ * the cmdTree command parser (compoent/CommandParse, static mode).
+ *
+ * Registered commands:
+ *   reset  software reset (IAP_CONTR), restarts the firmware so the full
+ *          boot log can be captured again without a hardware reset button
+ *   help   built-in, lists registered commands
  */
 
 #include "EventSchedul.h"
 
 extern EventSchedul_Context* evtSchedul_ctx;
+
+int cmds_init(void);
 
 #endif /* _USERTASK_CMDS_H_ */

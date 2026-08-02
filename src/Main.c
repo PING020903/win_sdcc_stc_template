@@ -61,6 +61,12 @@ int main(void)
     doorLockTask_init();
     board_registerDoors(doorLockTask_manager());
 
+    if (cmds_init() != 0) {
+        ERROR_PRINT("cmds_init failed");
+        while (1)
+            ;
+    }
+
     DEBUG_PRINT("doorLock ready, doors=%u", (unsigned int)doorLockTask_manager()->doorCnt);
 
     EventSchedul_MainLoop(evtSchedul_ctx);

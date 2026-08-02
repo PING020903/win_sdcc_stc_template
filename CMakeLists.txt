@@ -36,6 +36,7 @@ set(INCLUDES
     -I${CMAKE_CURRENT_SOURCE_DIR}/compoent/BUS_IO_management
     -I${CMAKE_CURRENT_SOURCE_DIR}/compoent/EventScheduling/include
     -I${CMAKE_CURRENT_SOURCE_DIR}/compoent/debounce/include
+    -I${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/include
     -I${HAL_DIR}
     -I${UNISTC}/include
     -I${DRIVER_DIR}
@@ -71,6 +72,7 @@ set(APP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/doorLock.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userButton.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_doorLock.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_cmds.c
 )
 
 # Ported framework components
@@ -79,11 +81,14 @@ set(COMP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/EventScheduling/EventSchedul.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/BUS_IO_management/bus_io_management.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/debounce/debounce.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/CommandParseTree.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/CommandParse/cmdUserStringParser.c
 )
 
-# uni-STC HAL modules actually used (GPIO only; timer/uart use direct SFRs)
+# uni-STC HAL modules actually used (timer/uart use direct SFRs)
 set(HAL_SRCS
     ${HAL_DIR}/gpio-hal.c
+    ${HAL_DIR}/reset-hal.c
 )
 
 # ---- Build dir & object list ----------------------------------------
