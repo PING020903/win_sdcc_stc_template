@@ -1,0 +1,40 @@
+关于使用 SDCC + uni-STC 开发 STC12 系列
+一、先说结论
+可以，完全可行。 STC12 系列是 8051 内核芯片，SDCC 完全支持该内核，编译生成的标准 HEX 固件可以通过 STC 官方下载工具 AiCube-ISP 正常烧录运行。您在 GitHub/codeberg 上看到的 uni-STC 正是社区为这套方案整理的开源库。
+
+二、关于 uni-STC 项目
+据论坛用户分享，uni-STC 开源库的托管地址为 codeberg.org/20-100/uni-STC，它是一个可以在 VS + PlatformIO（PIO）+ SDCC 环境下直接编译的开源库。注意它需要预装 make 和 sdcc 并添加到系统路径，编译时 cmd 或 powershell 可能不行，需要 eide/msys bash 环境。
+
+同类的社区开源固件库还包括（据论坛用户分享）：
+
+HML_FwLib_STC12（github.com/IOsetting/HML_FwLib_STC12）—— 针对 STC12 系列
+FwLib_STC8（github.com/IOsetting/FwLib_STC8）
+HML_FwLib_STC89
+三、STC12 + SDCC 的注意事项（重点）
+根据手册和论坛反馈，请您特别留意以下几点：
+
+1. STC12 官方推荐编译器仍是 Keil C51
+
+手册《编译器（汇编器）/仿真器/头文件使用指南》中明确说明：
+
+任何老式的 8051 编译器/汇编器都可以支持，现流行使用 Keil C51。
+
+STC12C5A60S2 系列头文件 STC12C5A60S2.H 是 STC 官方为 Keil 环境提供的。SDCC 的头文件语法与 Keil 有差异，直接用官方 Keil 版头文件在 SDCC 下编译一般会报错，这正是 uni-STC / HML_FwLib_STC12 这类开源库存在的意义——它们提供了适配 SDCC 的头文件体系。所以使用 uni-STC 时请使用其自身配套的头文件，而不是 STC 官方的 Keil 版头文件。
+
+2. 注意大小端问题（重要！）
+
+据论坛用户反馈，SDCC 编译在 STC12 上运行，需要重点关注 sfr16 等 16 位寄存器、数据的大小端问题。SDCC 与 Keil 在 16 位变量/寄存器的高低字节顺序处理上存在差异，这一直是社区里 STC12 + SDCC 被反复提醒的坑。
+
+3. 性能差异
+
+据论坛用户实测：用 SDCC 编译的 STC12 程序，运行速度（如 TFT 刷屏）比 Keil C51 编译的慢约 1 倍。如果您对时序、刷新率、运算速度有严格要求，这一点需要权衡。
+
+4. 关于扩展中断
+
+STC12 系列的中断数量相比 STC8H 要少得多，不涉及 STC8H 那种"扩展中断（32 以上）需要特殊处理"的问题，SDCC 直接写 __interrupt (n) 即可，相对简单。
+
+四、客观建议
+作为 STC 的 FAE，给您一个务实的建议：
+
+如果您是因为免费/开源/跨平台等原因想用 SDCC，STC12 系列完全可以，配合 uni-STC 或 HML_FwLib_STC12 库即可，下载烧录不受任何限制。
+但如果您追求性能和开发便利性，STC12 系列的官方推荐仍是 Keil C51，其头文件、例程、仿真支持最为完善，且不会遇到大小端和性能损耗问题

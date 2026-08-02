@@ -19,6 +19,9 @@ static unsigned char selectedDoor = 0;
 static unsigned char configMode = 0;
 static uint8_t configIdleCnt = 0;      /* seconds */
 
+/* TEMP: heartbeat counter for EVT_DOORLOCK_TEST_SEC. */
+static uint16_t testSecCnt = 0;
+
 #define CFG_DELAY_STEP_SEC     1U   /* +/- step per press (seconds) */
 #define CONFIG_IDLE_TIMEOUT_SEC 5U   /* no input -> confirm current value (seconds) */
 
@@ -91,6 +94,8 @@ static void doorLockTask_handleTick(void) {
         return;
     secPrescaler = 0;
 
+    doorLockTask_postEvent(EVT_DOORLOCK_TEST_SEC);
+
     if (lockTimeoutActive && lockTimeoutCnt > 0) {
         if (--lockTimeoutCnt == 0) {
             lockTimeoutActive = 0;
@@ -161,6 +166,12 @@ static void doorLockTask_handleButton(void) {
         doorLockTask_postEvent(EVT_DOORLOCK_DISPLAY_REFRESH);
 }
 
+/* TEMP: heartbeat while the board IO is not finalised. */
+static void doorLockTask_handleTestSec(void) {
+    testSecCnt++;
+    VAR_PRINT_UD(testSecCnt);
+}
+
 static void doorLockTask_handleLockTimeout(void) {
     if (doorMgr.openDoor >= 0) {
         doorLock_lockCtrl(&doorMgr.doors[doorMgr.openDoor], 1);
@@ -189,6 +200,9 @@ static void doorLockTask(EventSchedul_EventId evt, void *arg) REENTRANT {
         break;
     case EVT_DOORLOCK_LOCK_TIMEOUT:
         doorLockTask_handleLockTimeout();
+        break;
+    case EVT_DOORLOCK_TEST_SEC:
+        doorLockTask_handleTestSec();
         break;
     default:
         break;

@@ -26,13 +26,13 @@
     } while (0)
 
 __HIGH_CODE
-static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ringbuf_ucnt_t depth)
+static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ringbuf_ucnt_t depth) REENTRANT
 {
     return (ringbuf_cnt_t)((wr >= rd) ? (wr - rd) : (wr + (ringbuf_uidx_t)depth - rd));
 }
 
 __HIGH_CODE
-static inline void *_get_item_ptr(const ringbuf_t *rb, ringbuf_uidx_t idx)
+static inline void *_get_item_ptr(const ringbuf_t *rb, ringbuf_uidx_t idx) REENTRANT
 {
     unsigned int actual_idx = idx % rb->depth;
     ringBuf_ptr_t ret = (ringBuf_ptr_t)rb->buffer + ((ringBuf_ptr_t)actual_idx * (ringBuf_ptr_t)rb->item_size);
@@ -49,7 +49,7 @@ ringBuf_err_t ringBuf_clear(ringbuf_t *rb)
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount)
+ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount) REENTRANT
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pCount)
@@ -68,7 +68,7 @@ ringBuf_err_t ringBuf_init(ringbuf_t *rb)
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData)
+ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData) REENTRANT
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pData)
@@ -96,7 +96,7 @@ ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData)
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData)
+ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData) REENTRANT
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pData)

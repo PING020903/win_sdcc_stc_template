@@ -9,6 +9,15 @@
 #define MIN(n, m) (((n) < (m)) ? (n) : (m))
 #endif
 
+/* Functions shared between ISR and main context must be reentrant (SDCC). */
+#ifndef REENTRANT
+#ifdef __SDCC
+#define REENTRANT __reentrant
+#else
+#define REENTRANT
+#endif
+#endif
+
 #ifndef MAX
 #define MAX(n, m) (((n) < (m)) ? (m) : (n))
 #endif
@@ -59,10 +68,10 @@ typedef ptrdiff_t ringBuf_ptr_t;
     }
 
 ringBuf_err_t ringBuf_clear(ringbuf_t *rb);
-ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount);
+ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount) REENTRANT;
 ringBuf_err_t ringBuf_init(ringbuf_t *rb);
-ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData);
-ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData);
+ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData) REENTRANT;
+ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData) REENTRANT;
 ringBuf_err_t ringBuf_peek(const ringbuf_t *rb, void *pData, const ringbuf_ucnt_t itemIdx);
 ringBuf_err_t ringBuf_push_multi(ringbuf_t *rb, const void *pData, const ringbuf_ucnt_t dataCount, ringbuf_cnt_t *pCount);
 ringBuf_err_t ringBuf_pop_multi(ringbuf_t *rb, void *pData, const ringbuf_ucnt_t dataCount, ringbuf_cnt_t *pCount);

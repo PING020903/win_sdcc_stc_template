@@ -14,5 +14,8 @@
 !/.clang-format
 !/.clangd
 
+!/README.md
+!/tips.txt
+
 # Keep this file itself tracked.
 !/.gitignore

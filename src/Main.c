@@ -11,8 +11,18 @@
 /* Shared scheduler handle used by tickBroadcast and the door lock task. */
 EventSchedul_Context* evtSchedul_ctx = NULL;
 
-/* Defined in userTMR_init.c; declared here so SDCC emits its vector. */
+/*
+ * SDCC emits the interrupt vector table only in the module containing
+ * main(), and only for ISRs prototyped here *with* the __interrupt
+ * attribute. A plain prototype produces no vector entry.
+ */
+#ifdef __SDCC
+void timer0_isr(void) __interrupt(TIMER0_INTERRUPT);  /* userTMR_init.c */
+void uart1_isr(void) __interrupt(UART1_INTERRUPT);    /* userUART_init.c */
+#else
 void timer0_isr(void);
+void uart1_isr(void);
+#endif
 
 __HIGH_CODE
 static void evtSchedul_idle(void) REENTRANT
@@ -30,6 +40,7 @@ static void evtSchedul_idle(void) REENTRANT
 
 int main(void)
 {
+    CLKDIV = 0;   /* defensive: sysclk = crystal/1 regardless of ISP settings */
     EA = 1;
 
     userUART_init();

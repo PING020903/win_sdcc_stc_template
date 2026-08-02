@@ -13,6 +13,7 @@ typedef enum {
     EVT_DOORLOCK_LOCK_TIMEOUT,
     EVT_DOORLOCK_BTN_SCAN,
     EVT_DOORLOCK_DISPLAY_REFRESH,
+    EVT_DOORLOCK_TEST_SEC,      /* TEMP: 1 s heartbeat while board IO is undefined */
     EVT_DOORLOCK_END,
 } doorLock_event_t;
 

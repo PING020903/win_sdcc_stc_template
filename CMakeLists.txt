@@ -6,15 +6,18 @@ project(SimpleDoorLock NONE)
 find_program(SDCC sdcc REQUIRED)
 find_program(SDAS sdas8051 REQUIRED)
 
-# ---- Target MCU: STC12C5A60S2 (60KB flash) --------------------------
-# uni-STC only ships 12C5AxxS2/PDIP40.h; registers are identical for the
-# LQFP44 package, so the PDIP40 header is used either way.
-set(MCU_VARIANT   STC12C5A60S2_PDIP40)
-set(MCU_FREQ_KHZ  11059)
+# ---- Target MCU: STC12C5A56S2 (56KB flash) --------------------------
+# uni-STC only ships 12C5AxxS2/PDIP40.h; registers are identical across
+# the STC12C5AxxS2 series (and for the LQFP44 package), so the PDIP40
+# header is used either way.
+set(MCU_VARIANT   STC12C5A56S2_PDIP40)
+# Exact Hz matters: the UART baud reload divides MCU_FREQ directly, and
+# 11059000 (truncated kHz) would round the reload to 0xFE -> 172800 baud.
+set(MCU_FREQ_HZ   11059200)
 set(MEMORY_MODEL  --model-large)
 set(IRAM_SIZE     256)
 set(XRAM_SIZE     1024)
-set(FLASH_SIZE    61440)
+set(FLASH_SIZE    57344)
 set(STACK_SIZE    112)
 set(HAS_DUAL_DPTR y)
 
@@ -39,7 +42,7 @@ set(INCLUDES
 )
 
 set(CPPFLAGS
-    -DMCU_FREQ=${MCU_FREQ_KHZ}000ul
+    -DMCU_FREQ=${MCU_FREQ_HZ}ul
     -DFLASH_SIZE=${FLASH_SIZE}
     -DBUILD_FOR_${MCU_VARIANT}
     -DBUSMANAGE_DEBUG
@@ -163,7 +166,7 @@ add_custom_command(TARGET firmware POST_BUILD
 set(CDB_ARGS
     "\"clang\"" "\"-xc\"" "\"-std=c99\""
     "\"-include\"" "\"stdbool.h\""
-    "\"-DMCU_FREQ=${MCU_FREQ_KHZ}000ul\""
+    "\"-DMCU_FREQ=${MCU_FREQ_HZ}ul\""
     "\"-DFLASH_SIZE=${FLASH_SIZE}\""
     "\"-DBUILD_FOR_${MCU_VARIANT}\""
     "\"-DBUSMANAGE_DEBUG\""
