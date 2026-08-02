@@ -28,7 +28,10 @@
 __HIGH_CODE
 static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ringbuf_ucnt_t depth) REENTRANT
 {
-    return (ringbuf_cnt_t)((wr >= rd) ? (wr - rd) : (wr + (ringbuf_uidx_t)depth - rd));
+    /* indices span [0, 2*depth): on wrap-around the distance is
+     * wr + 2*depth - rd, NOT wr + depth - rd (a full buffer with
+     * wr wrapped past rd would otherwise be misreported as empty). */
+    return (ringbuf_cnt_t)((wr >= rd) ? (wr - rd) : (wr + 2U * (ringbuf_uidx_t)depth - rd));
 }
 
 __HIGH_CODE
