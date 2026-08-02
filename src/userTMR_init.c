@@ -29,7 +29,14 @@ void userTMR_init(void)
 
 uint16_t userTMR_GetTick(void)
 {
-    return tickMs;
+    uint16_t t;
+
+    /* tickMs is incremented by timer0_isr; exclude the only writer so the
+     * 16-bit read is atomic. A pending overflow simply fires right after. */
+    T0IE = 0;
+    t = tickMs;
+    T0IE = 1;
+    return t;
 }
 
 INTERRUPT(timer0_isr, TIMER0_INTERRUPT)

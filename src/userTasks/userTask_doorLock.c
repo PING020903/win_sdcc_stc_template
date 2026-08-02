@@ -3,6 +3,7 @@
 #include "board_bus.h"
 #include "tickBroadcast.h"
 #include "userTask_cmds.h"
+#include "userTMR_init.h"
 
 static EventSchedul_TaskNode *hTaskDoorLock = NULL;
 static doorLock_manager_t doorMgr;
@@ -170,7 +171,8 @@ static void doorLockTask_handleButton(void) {
 /* TEMP: heartbeat while the board IO is not finalised. */
 static void doorLockTask_handleTestSec(void) {
     testSecCnt++;
-    VAR_PRINT_UD(testSecCnt);
+    /* raw tick included: on a stall it shows whether the 1 ms beat died */
+    DEBUG_PRINT("hb cnt=%u tick=%u", (unsigned int)testSecCnt, (unsigned int)userTMR_GetTick());
 }
 
 static void doorLockTask_handleLockTimeout(void) {

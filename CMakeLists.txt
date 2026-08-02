@@ -18,7 +18,10 @@ set(MEMORY_MODEL  --model-large)
 set(IRAM_SIZE     256)
 set(XRAM_SIZE     1024)
 set(FLASH_SIZE    57344)
-set(STACK_SIZE    112)
+# Grown from 112 to 160: the deepest chain (MainLoop -> task callback ->
+# printf -> putchar -> ringBuf_push...) plus a preempting UART ISR needs
+# more than 112 B; IRAM has 51 B spare after the data region, use it.
+set(STACK_SIZE    160)
 set(HAS_DUAL_DPTR y)
 
 # ---- uni-STC locations ----------------------------------------------
