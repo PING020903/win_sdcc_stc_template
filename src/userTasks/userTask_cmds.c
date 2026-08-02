@@ -33,10 +33,11 @@ void cmd_MemoryFree(void *mem)
         cmdTokenPoolBusy = 0;
 }
 
-/* ---- line assembly ---- */
+/* ---- receive buffer ---- */
 
-static char lineBuf[PARSE_SIZE];
-static uint8_t lineLen = 0;
+#define CMD_POLL_PERIOD_MS  300U
+
+static char cmdBuf[PARSE_SIZE];
 
 /* ---- command handlers ---- */
 
@@ -50,24 +51,30 @@ static void cmd_reset(void *arg)
         ;
 }
 
-/* Called from the door-lock task's TICK handler (see userTask_doorLock.c). */
+/* Called from the door-lock task's TICK handler (see userTask_doorLock.c).
+ * Every CMD_POLL_PERIOD_MS the RX FIFO is drained in one batch and fed to
+ * the parser as-is — no line editing; CR/LF from terminals are dropped so
+ * they don't end up inside tokens. */
 void cmds_poll(void)
 {
+    static uint16_t pollCnt = 0;
     int16_t c;
+    uint8_t len = 0;
+
+    if (++pollCnt < CMD_POLL_PERIOD_MS)
+        return;
+    pollCnt = 0;
 
     while ((c = userUART_ReadByte()) >= 0) {
-        if (c == '\r' || c == '\n') {
-            if (lineLen > 0) {
-                lineBuf[lineLen] = '\0';
-                cmdTree_CommandParse(lineBuf);
-                lineLen = 0;
-            }
-        } else if (c == 0x08 || c == 0x7F) {    /* backspace */
-            if (lineLen > 0)
-                lineLen--;
-        } else if (lineLen < (uint8_t)(PARSE_SIZE - 1U)) {
-            lineBuf[lineLen++] = (char)c;
-        }
+        if (c == '\r' || c == '\n')
+            continue;
+        if (len < (uint8_t)(PARSE_SIZE - 1U))
+            cmdBuf[len++] = (char)c;
+    }
+
+    if (len > 0) {
+        cmdBuf[len] = '\0';
+        cmdTree_CommandParse(cmdBuf);
     }
 }
 

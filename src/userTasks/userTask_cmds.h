@@ -4,11 +4,11 @@
 /*
  * Serial console command handling.
  *
- * Bytes received by the UART1 ISR land in the RX FIFO; cmds_poll() drains
- * them, assembles lines and feeds complete lines to the cmdTree command
- * parser (compoent/CommandParse, static mode). It runs inside the main
- * (door-lock) task's TICK event — no scheduler task of its own, XRAM is
- * too scarce for one.
+ * Bytes received by the UART1 ISR land in the RX FIFO; cmds_poll() runs
+ * inside the main (door-lock) task's TICK event and, every 300 ms, drains
+ * the FIFO in one batch and feeds it straight to the cmdTree command parser
+ * (compoent/CommandParse, static mode). No scheduler task of its own —
+ * XRAM is too scarce for one.
  *
  * Registered commands:
  *   reset  software reset (IAP_CONTR), restarts the firmware so the full
