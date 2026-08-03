@@ -46,20 +46,24 @@
 
 #include "dbg_printf.h"
 
-#define DEBUG_PRINT(FMT, ...)     dbg_printf("[%s] " FMT "\n", __func__, ##__VA_ARGS__)
-#define ERROR_PRINT(FMT, ...)     dbg_printf("[%s] ERR " FMT "\n", __func__, ##__VA_ARGS__)
+/* The "[__func__] " prefix goes through dbg_prefix() (non-reentrant, arg
+ * via PARM area) instead of a "%s" vararg, saving 3 B of stack at every
+ * call site while keeping the output identical. */
 
-#define VAR_PRINT_UD(VAR)         dbg_printf("[%s] %s=%u (L%d)\n",  __func__, #VAR, (unsigned int)(VAR), __LINE__)
-#define VAR_PRINT_INT(VAR)        dbg_printf("[%s] %s=%d (L%d)\n",  __func__, #VAR, (int)(VAR), __LINE__)
-#define VAR_PRINT_HEX(VAR)        dbg_printf("[%s] %s=0x%x (L%d)\n", __func__, #VAR, (unsigned int)(VAR), __LINE__)
-#define VAR_PRINT_POS(VAR)        dbg_printf("[%s] %s=%p (L%d)\n",  __func__, #VAR, (void *)(VAR), __LINE__)
-#define VAR_PRINT_STRING(VAR)     dbg_printf("[%s] %s=\"%s\" (L%d)\n", __func__, #VAR, (VAR), __LINE__)
-#define VAR_PRINT_CH(VAR)         dbg_printf("[%s] %s='%c' (L%d)\n", __func__, #VAR, (char)(VAR), __LINE__)
+#define DEBUG_PRINT(FMT, ...)     do { dbg_prefix(__func__); dbg_printf(FMT "\n", ##__VA_ARGS__); } while (0)
+#define ERROR_PRINT(FMT, ...)     do { dbg_prefix(__func__); dbg_printf("ERR " FMT "\n", ##__VA_ARGS__); } while (0)
 
-#define MACRO_PRINT_INT(VAR)      dbg_printf("[%s] MACRO %s=%d\n",  __func__, #VAR, (int)(VAR))
-#define MACRO_PRINT_UD(VAR)       dbg_printf("[%s] MACRO %s=%u\n",  __func__, #VAR, (unsigned int)(VAR))
-#define MACRO_PRINT_HEX(VAR)      dbg_printf("[%s] MACRO %s=0x%x\n", __func__, #VAR, (unsigned int)(VAR))
-#define MACRO_PRINT_STR(VAR)      dbg_printf("[%s] MACRO %s=\"%s\"\n", __func__, #VAR, (VAR))
+#define VAR_PRINT_UD(VAR)         do { dbg_prefix(__func__); dbg_printf("%s=%u (L%d)\n",  #VAR, (unsigned int)(VAR), __LINE__); } while (0)
+#define VAR_PRINT_INT(VAR)        do { dbg_prefix(__func__); dbg_printf("%s=%d (L%d)\n",  #VAR, (int)(VAR), __LINE__); } while (0)
+#define VAR_PRINT_HEX(VAR)        do { dbg_prefix(__func__); dbg_printf("%s=0x%x (L%d)\n", #VAR, (unsigned int)(VAR), __LINE__); } while (0)
+#define VAR_PRINT_POS(VAR)        do { dbg_prefix(__func__); dbg_printf("%s=%p (L%d)\n",  #VAR, (void *)(VAR), __LINE__); } while (0)
+#define VAR_PRINT_STRING(VAR)     do { dbg_prefix(__func__); dbg_printf("%s=\"%s\" (L%d)\n", #VAR, (VAR), __LINE__); } while (0)
+#define VAR_PRINT_CH(VAR)         do { dbg_prefix(__func__); dbg_printf("%s='%c' (L%d)\n", #VAR, (char)(VAR), __LINE__); } while (0)
+
+#define MACRO_PRINT_INT(VAR)      do { dbg_prefix(__func__); dbg_printf("MACRO %s=%d\n",  #VAR, (int)(VAR)); } while (0)
+#define MACRO_PRINT_UD(VAR)       do { dbg_prefix(__func__); dbg_printf("MACRO %s=%u\n",  #VAR, (unsigned int)(VAR)); } while (0)
+#define MACRO_PRINT_HEX(VAR)      do { dbg_prefix(__func__); dbg_printf("MACRO %s=0x%x\n", #VAR, (unsigned int)(VAR)); } while (0)
+#define MACRO_PRINT_STR(VAR)      do { dbg_prefix(__func__); dbg_printf("MACRO %s=\"%s\"\n", #VAR, (VAR)); } while (0)
 
 #else /* !DBG_ENABLE */
 

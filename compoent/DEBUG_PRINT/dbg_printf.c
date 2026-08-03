@@ -21,6 +21,15 @@ static void dbg_putc(uint8_t c)
     userUART_WriteByte(c);
 }
 
+void dbg_prefix(const char *fn)
+{
+    dbg_putc('[');
+    while (*fn)
+        dbg_putc((uint8_t)*fn++);
+    dbg_putc(']');
+    dbg_putc(' ');
+}
+
 static void dbg_u16_dec(unsigned int v)
 {
     char d[5];

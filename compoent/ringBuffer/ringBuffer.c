@@ -34,7 +34,12 @@ static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ri
 __HIGH_CODE
 static inline void *_get_item_ptr(const ringbuf_t *rb, ringbuf_uidx_t idx)
 {
-    unsigned int actual_idx = idx % rb->depth;
+    /* Indices are always < 2*depth (RINGBUF_UPDATE_IDX / peek wrap), so
+     * idx % depth == idx - depth when idx >= depth; avoids the __moduint
+     * lib call on the hot path. */
+    unsigned int actual_idx = idx;
+    if (actual_idx >= rb->depth)
+        actual_idx -= rb->depth;
     unsigned char *base = (unsigned char *)rb->buffer;
     return base + ((unsigned int)actual_idx * (unsigned int)rb->item_size);
 }

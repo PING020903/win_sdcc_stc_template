@@ -20,4 +20,9 @@
  * Anything else prints '%' followed by the offending character. */
 void dbg_printf(const char *fmt, ...) DBG_PRINTF_REENTRANT;
 
+/* Emit "[fn] " for the DEBUG_PRINT family. Non-reentrant: __func__ is
+ * passed via the fixed PARM area (not the stack), so the per-call prefix
+ * no longer costs a 3-byte vararg on the runtime stack. */
+void dbg_prefix(const char *fn);
+
 #endif /* _DBG_PRINTF_H_ */

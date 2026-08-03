@@ -18,10 +18,10 @@ set(MEMORY_MODEL  --model-large)
 set(IRAM_SIZE     256)
 set(XRAM_SIZE     1024)
 set(FLASH_SIZE    57344)
-# Ring buffer entry points are now non-reentrant (__critical sections) and
-# printing uses the minimal dbg_printf, so the deepest chain no longer needs
-# a 160 B stack: 128 leaves room for the fixed data/overlay region (121 B)
-# while keeping a comfortable margin over the measured worst case.
+# Ring buffer entry points are non-reentrant (__critical sections) and
+# printing uses the minimal dbg_printf, so the deepest chain is ~47 B: 128
+# leaves a 55 B margin over the measured worst case (73 B incl. ISR) while
+# keeping headroom for the fixed data/overlay region (~115 B).
 set(STACK_SIZE    128)
 set(HAS_DUAL_DPTR y)
 

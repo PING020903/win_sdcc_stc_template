@@ -28,6 +28,9 @@
 - **`_get_item_ptr` 去掉 `ringBuf_ptr_t`（ptrdiff_t）中间量**：改用
   `unsigned char *` + `unsigned int` 偏移，消除了内联展开里的 `__mullong`
   与多个 4 字节栈槽（帧 29 B → 22 B）。
+- **`idx % depth` 改为比较-减法**：索引恒 `< 2*depth`（`RINGBUF_UPDATE_IDX` /
+  peek 折返保证），故 `idx % depth == (idx >= depth ? idx - depth : idx)`，
+  去掉热路径上的 `__moduint` 库调用（4 处）。
 - core 之间互调 `ringBuf_count_core`，避免嵌套临界区。
 
 API 签名不变，调用方无需改动；多元素接口（`*_multi`）仍逐个调用上述 wrapper，
