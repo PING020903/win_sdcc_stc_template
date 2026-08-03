@@ -16,10 +16,10 @@
  * 11059200ul in the build configuration (11059000 would truncate the
  * reload to 0xFE and produce 172800 baud).
  *
- * The RX/TX FIFOs use the project's ringBuffer component; the ringBuf_*
- * functions involved are declared REENTRANT so the ISR and the main
- * context may use them concurrently. Keep the depth <= 128 so the 16-bit
- * ring indices stay effectively atomic (high byte always zero).
+ * The RX/TX FIFOs use the project's ringBuffer component. The shared
+ * ringBuf_* entry points are non-reentrant but wrap their bodies in a
+ * __critical section (see ringBuffer.c), so ISR and main context may use
+ * the FIFOs concurrently without clobbering the fixed PARM / overlay area.
  * userUART_WriteByte() blocks while the TX FIFO is full, so it requires
  * interrupts to be enabled.
  */
@@ -135,7 +135,11 @@ int putchar(int c)
     return c;
 }
 
-INTERRUPT(uart1_isr, UART1_INTERRUPT)
+/* __using(1): switch to register bank 1 instead of pushing r0-r7 on the
+ * stack (main and timer0_isr stay on bank 0), trimming ~8 B off the ISR
+ * stack frame. The ISR's ringBuf_* calls run under their own __critical
+ * sections, so bank-1 register scratch is isolated from the main context. */
+INTERRUPT_USING(uart1_isr, UART1_INTERRUPT, 1)
 {
     if (S1CON & M_UART_RXIF) {
         uint8_t c = S1BUF;

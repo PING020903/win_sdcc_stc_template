@@ -7,6 +7,7 @@
 # ...then whitelist what we want in the repo.
 !/compoent/
 !/src/
+!/tools/
 !/uni-stc/
 
 !/build.bat
@@ -20,3 +21,6 @@
 
 # Keep this file itself tracked.
 !/.gitignore
+
+# Python bytecode caches (tools/*.py)
+__pycache__/

@@ -18,10 +18,11 @@ set(MEMORY_MODEL  --model-large)
 set(IRAM_SIZE     256)
 set(XRAM_SIZE     1024)
 set(FLASH_SIZE    57344)
-# Grown from 112 to 160: the deepest chain (MainLoop -> task callback ->
-# printf -> putchar -> ringBuf_push...) plus a preempting UART ISR needs
-# more than 112 B; IRAM has 51 B spare after the data region, use it.
-set(STACK_SIZE    160)
+# Ring buffer entry points are now non-reentrant (__critical sections) and
+# printing uses the minimal dbg_printf, so the deepest chain no longer needs
+# a 160 B stack: 128 leaves room for the fixed data/overlay region (121 B)
+# while keeping a comfortable margin over the measured worst case.
+set(STACK_SIZE    128)
 set(HAS_DUAL_DPTR y)
 
 # ---- uni-STC locations ----------------------------------------------
@@ -82,6 +83,7 @@ set(APP_SRCS
 # Ported framework components
 set(COMP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/ringBuffer/ringBuffer.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/compoent/DEBUG_PRINT/dbg_printf.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/EventScheduling/EventSchedul.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/BUS_IO_management/bus_io_management.c
     ${CMAKE_CURRENT_SOURCE_DIR}/compoent/debounce/debounce.c
@@ -133,6 +135,7 @@ add_custom_target(gen_build_time ALL
 )
 
 set(OBJS "")
+set(ASM_FILES "")
 foreach(src ${APP_SRCS} ${COMP_SRCS} ${HAL_SRCS})
     if(src MATCHES "Main\\.c$")
         sdcc_compile(${src} rel ${BUILD_STAMP})
@@ -140,7 +143,10 @@ foreach(src ${APP_SRCS} ${COMP_SRCS} ${HAL_SRCS})
         sdcc_compile(${src} rel)
     endif()
     list(APPEND OBJS ${rel})
+    string(REGEX REPLACE "\\.rel$" ".asm" asm_file ${rel})
+    list(APPEND ASM_FILES ${asm_file})
 endforeach()
+list(APPEND ASM_FILES ${HAL_DIR}/crtxinit.asm)
 
 # Dual-DPTR runtime support (STC12 has dual DPTR)
 if(HAS_DUAL_DPTR STREQUAL "y")
@@ -172,6 +178,31 @@ add_custom_command(TARGET firmware POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/output
     COMMAND ${CMAKE_COMMAND} -E copy ${FW} ${CMAKE_CURRENT_SOURCE_DIR}/output/${PROJECT_NAME}.hex
     COMMENT "Copying firmware to output/"
+)
+
+# ---- Static stack usage analysis (post-link) --------------------------
+# Parses the .asm SDCC emitted for every linked module, disassembles the
+# libsdcc helpers out of the .hex with s51, builds the call graph and
+# reports worst-case stack depth (main chain + largest ISR overlay).
+# Fails the build if the worst case exceeds STACK_SIZE.
+find_package(Python3 COMPONENTS Interpreter REQUIRED)
+find_program(S51 s51)
+
+set(STACK_ANALYZE_ARGS
+    --map ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}.map
+    --hex ${FW}
+    --stack-size ${STACK_SIZE}
+    --config ${CMAKE_CURRENT_SOURCE_DIR}/tools/stack_config.json
+)
+if(S51)
+    list(APPEND STACK_ANALYZE_ARGS --s51 ${S51})
+endif()
+
+add_custom_command(TARGET firmware POST_BUILD
+    COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/stack_usage.py
+            ${STACK_ANALYZE_ARGS} ${ASM_FILES}
+    COMMENT "Analyzing stack usage"
+    VERBATIM
 )
 
 # ---- compile_commands.json for clangd --------------------------------

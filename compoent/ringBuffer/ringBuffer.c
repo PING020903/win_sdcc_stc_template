@@ -26,17 +26,46 @@
     } while (0)
 
 __HIGH_CODE
-static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ringbuf_ucnt_t depth) REENTRANT
+static inline ringbuf_cnt_t _calc_count(ringbuf_uidx_t wr, ringbuf_uidx_t rd, ringbuf_ucnt_t depth)
 {
     return (ringbuf_cnt_t)((wr >= rd) ? (wr - rd) : (wr + (ringbuf_uidx_t)depth - rd));
 }
 
 __HIGH_CODE
-static inline void *_get_item_ptr(const ringbuf_t *rb, ringbuf_uidx_t idx) REENTRANT
+static inline void *_get_item_ptr(const ringbuf_t *rb, ringbuf_uidx_t idx)
 {
     unsigned int actual_idx = idx % rb->depth;
-    ringBuf_ptr_t ret = (ringBuf_ptr_t)rb->buffer + ((ringBuf_ptr_t)actual_idx * (ringBuf_ptr_t)rb->item_size);
-    return (ret > 0) ? (void *)ret : NULL;
+    unsigned char *base = (unsigned char *)rb->buffer;
+    return base + ((unsigned int)actual_idx * (unsigned int)rb->item_size);
+}
+
+/* ---- ISR/main shared access ------------------------------------------
+ * ringBuf_count/push/pop/peek are called from both uart1_isr and the main
+ * context. They are non-reentrant, so each public entry point runs its
+ * body (the _core function) inside a __critical block. That makes the
+ * shared index/buffer access atomic w.r.t. the ISR and keeps the fixed
+ * PARM / overlay storage from being clobbered by preemption. __critical
+ * saves and restores EA, so it is also correct when invoked from within an
+ * ISR (EA is already 0 there). */
+
+__HIGH_CODE
+static ringBuf_err_t ringBuf_count_core(const ringbuf_t *rb, ringbuf_cnt_t *pCount)
+{
+    RINGBUF_ARG_CHECK(rb);
+    if (!pCount)
+        return RINGBUF_ERR_ARG;
+    *pCount = _calc_count(rb->wr_idx, rb->rd_idx, rb->depth);
+    return RINGBUF_OK;
+}
+
+__HIGH_CODE
+ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount)
+{
+    ringBuf_err_t err;
+    __critical {
+        err = ringBuf_count_core(rb, pCount);
+    }
+    return err;
 }
 
 __HIGH_CODE
@@ -45,16 +74,6 @@ ringBuf_err_t ringBuf_clear(ringbuf_t *rb)
     RINGBUF_ARG_CHECK(rb);
     rb->rd_idx = 0U;
     rb->wr_idx = 0U;
-    return RINGBUF_OK;
-}
-
-__HIGH_CODE
-ringBuf_err_t ringBuf_count(const ringbuf_t *rb, ringbuf_cnt_t *pCount) REENTRANT
-{
-    RINGBUF_ARG_CHECK(rb);
-    if (!pCount)
-        return RINGBUF_ERR_ARG;
-    *pCount = _calc_count(rb->wr_idx, rb->rd_idx, rb->depth);
     return RINGBUF_OK;
 }
 
@@ -68,14 +87,14 @@ ringBuf_err_t ringBuf_init(ringbuf_t *rb)
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData) REENTRANT
+static ringBuf_err_t ringBuf_push_core(ringbuf_t *rb, const void *pData)
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pData)
         return RINGBUF_ERR_ARG;
 
     ringbuf_cnt_t count;
-    ringBuf_err_t err = ringBuf_count(rb, &count);
+    ringBuf_err_t err = ringBuf_count_core(rb, &count);
     if (err != RINGBUF_OK)
         return err;
 
@@ -96,14 +115,24 @@ ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData) REENTRANT
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData) REENTRANT
+ringBuf_err_t ringBuf_push(ringbuf_t *rb, const void *pData)
+{
+    ringBuf_err_t err;
+    __critical {
+        err = ringBuf_push_core(rb, pData);
+    }
+    return err;
+}
+
+__HIGH_CODE
+static ringBuf_err_t ringBuf_pop_core(ringbuf_t *rb, void *pData)
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pData)
         return RINGBUF_ERR_ARG;
 
     ringbuf_cnt_t count;
-    ringBuf_err_t err = ringBuf_count(rb, &count);
+    ringBuf_err_t err = ringBuf_count_core(rb, &count);
     if (err != RINGBUF_OK)
         return err;
 
@@ -117,14 +146,24 @@ ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData) REENTRANT
 }
 
 __HIGH_CODE
-ringBuf_err_t ringBuf_peek(const ringbuf_t *rb, void *pData, const ringbuf_ucnt_t itemIdx)
+ringBuf_err_t ringBuf_pop(ringbuf_t *rb, void *pData)
+{
+    ringBuf_err_t err;
+    __critical {
+        err = ringBuf_pop_core(rb, pData);
+    }
+    return err;
+}
+
+__HIGH_CODE
+static ringBuf_err_t ringBuf_peek_core(const ringbuf_t *rb, void *pData, const ringbuf_ucnt_t itemIdx)
 {
     RINGBUF_ARG_CHECK(rb);
     if (!pData)
         return RINGBUF_ERR_ARG;
 
     ringbuf_cnt_t count;
-    ringBuf_err_t err = ringBuf_count(rb, &count);
+    ringBuf_err_t err = ringBuf_count_core(rb, &count);
     if (err != RINGBUF_OK)
         return err;
 
@@ -141,6 +180,16 @@ ringBuf_err_t ringBuf_peek(const ringbuf_t *rb, void *pData, const ringbuf_ucnt_
     void *read_pos = _get_item_ptr(rb, target_index);
     memcpy(pData, read_pos, rb->item_size);
     return RINGBUF_OK;
+}
+
+__HIGH_CODE
+ringBuf_err_t ringBuf_peek(const ringbuf_t *rb, void *pData, const ringbuf_ucnt_t itemIdx)
+{
+    ringBuf_err_t err;
+    __critical {
+        err = ringBuf_peek_core(rb, pData, itemIdx);
+    }
+    return err;
 }
 
 __HIGH_CODE

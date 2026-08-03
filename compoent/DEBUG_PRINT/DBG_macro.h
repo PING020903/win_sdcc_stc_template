@@ -4,10 +4,10 @@
 /*
  * Lightweight DBG_macro for STC12 (SDCC / 8051).
  *
- * Diagnostics are routed through SDCC's printf, which is retargeted by the
- * putchar() implemented in userUART_init.c (UART1). All formatting code
- * lives in flash; no large RAM buffer is used (the CH58x version needed a
- * 256-byte string buffer that does not fit in 1 KB XRAM).
+ * Diagnostics are routed through the minimal low-stack dbg_printf() (see
+ * dbg_printf.c), which writes straight to the UART1 FIFO in userUART_init.c.
+ * All formatting code lives in flash; no large RAM buffer is used (the CH58x
+ * version needed a 256-byte string buffer that does not fit in 1 KB XRAM).
  *
  * Set DBG_ENABLE to 0 to compile every diagnostic out entirely.
  */
@@ -44,22 +44,22 @@
 
 #if DBG_ENABLE
 
-#include <stdio.h>
+#include "dbg_printf.h"
 
-#define DEBUG_PRINT(FMT, ...)     printf("[%s] " FMT "\n", __func__, ##__VA_ARGS__)
-#define ERROR_PRINT(FMT, ...)     printf("[%s] ERR " FMT "\n", __func__, ##__VA_ARGS__)
+#define DEBUG_PRINT(FMT, ...)     dbg_printf("[%s] " FMT "\n", __func__, ##__VA_ARGS__)
+#define ERROR_PRINT(FMT, ...)     dbg_printf("[%s] ERR " FMT "\n", __func__, ##__VA_ARGS__)
 
-#define VAR_PRINT_UD(VAR)         printf("[%s] %s=%u (L%d)\n",  __func__, #VAR, (unsigned int)(VAR), __LINE__)
-#define VAR_PRINT_INT(VAR)        printf("[%s] %s=%d (L%d)\n",  __func__, #VAR, (int)(VAR), __LINE__)
-#define VAR_PRINT_HEX(VAR)        printf("[%s] %s=0x%x (L%d)\n", __func__, #VAR, (unsigned int)(VAR), __LINE__)
-#define VAR_PRINT_POS(VAR)        printf("[%s] %s=%p (L%d)\n",  __func__, #VAR, (void *)(VAR), __LINE__)
-#define VAR_PRINT_STRING(VAR)     printf("[%s] %s=\"%s\" (L%d)\n", __func__, #VAR, (VAR), __LINE__)
-#define VAR_PRINT_CH(VAR)         printf("[%s] %s='%c' (L%d)\n", __func__, #VAR, (char)(VAR), __LINE__)
+#define VAR_PRINT_UD(VAR)         dbg_printf("[%s] %s=%u (L%d)\n",  __func__, #VAR, (unsigned int)(VAR), __LINE__)
+#define VAR_PRINT_INT(VAR)        dbg_printf("[%s] %s=%d (L%d)\n",  __func__, #VAR, (int)(VAR), __LINE__)
+#define VAR_PRINT_HEX(VAR)        dbg_printf("[%s] %s=0x%x (L%d)\n", __func__, #VAR, (unsigned int)(VAR), __LINE__)
+#define VAR_PRINT_POS(VAR)        dbg_printf("[%s] %s=%p (L%d)\n",  __func__, #VAR, (void *)(VAR), __LINE__)
+#define VAR_PRINT_STRING(VAR)     dbg_printf("[%s] %s=\"%s\" (L%d)\n", __func__, #VAR, (VAR), __LINE__)
+#define VAR_PRINT_CH(VAR)         dbg_printf("[%s] %s='%c' (L%d)\n", __func__, #VAR, (char)(VAR), __LINE__)
 
-#define MACRO_PRINT_INT(VAR)      printf("[%s] MACRO %s=%d\n",  __func__, #VAR, (int)(VAR))
-#define MACRO_PRINT_UD(VAR)       printf("[%s] MACRO %s=%u\n",  __func__, #VAR, (unsigned int)(VAR))
-#define MACRO_PRINT_HEX(VAR)      printf("[%s] MACRO %s=0x%x\n", __func__, #VAR, (unsigned int)(VAR))
-#define MACRO_PRINT_STR(VAR)      printf("[%s] MACRO %s=\"%s\"\n", __func__, #VAR, (VAR))
+#define MACRO_PRINT_INT(VAR)      dbg_printf("[%s] MACRO %s=%d\n",  __func__, #VAR, (int)(VAR))
+#define MACRO_PRINT_UD(VAR)       dbg_printf("[%s] MACRO %s=%u\n",  __func__, #VAR, (unsigned int)(VAR))
+#define MACRO_PRINT_HEX(VAR)      dbg_printf("[%s] MACRO %s=0x%x\n", __func__, #VAR, (unsigned int)(VAR))
+#define MACRO_PRINT_STR(VAR)      dbg_printf("[%s] MACRO %s=\"%s\"\n", __func__, #VAR, (VAR))
 
 #else /* !DBG_ENABLE */
 

@@ -1,0 +1,13 @@
+{
+  "lib_overrides": {
+    "_printf": 68
+  },
+  "indirect_targets": {
+    "_EventSchedul_MainLoop": ["_doorLockTask", "_evtSchedul_idle"],
+    "_EventSchedul_TmosPoll": ["_doorLockTask"],
+    "_busManage_manager_allocate": ["_door_busInit", "_button_busInit", "_debug_uart_busInit"],
+    "_doorLock_register": ["_board_doorInit"],
+    "_doorLock_detect": ["_board_doorDetect"],
+    "_doorLock_lockCtrl": ["_board_doorLockCtrl"]
+  }
+}

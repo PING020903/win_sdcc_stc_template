@@ -1,10 +1,6 @@
 #include "bus_io_management.h"
 #include "DBG_macro.h"
 
-#ifdef BUSMANAGE_DEBUG
-#include <stdio.h>
-#endif
-
 /* Trimmed runtime state: just the active model and an initialised flag. */
 static struct {
     const busManage_bus_model_t *current_model;
@@ -84,13 +80,15 @@ void busManage_manager_dump_status(void)
     unsigned short i;
     const busManage_bus_model_t *m = g_mgr.current_model;
 
-    printf("[busmgr] init=%u model=%s\n",
-           g_mgr.initialized, (m && m->device_name) ? m->device_name : "N/A");
+    DEBUG_PRINT("[busmgr] init=%u model=%s",
+                (unsigned int)g_mgr.initialized,
+                (m && m->device_name) ? m->device_name : "N/A");
     if (!m)
         return;
     for (i = 0; i < m->resourcesCnt; i++) {
         const busManage_resource_desc_t *r = &m->resources[i];
-        printf("[busmgr] [%u] %s %s\n", i, bus_type_str(r->type), res_name(r));
+        DEBUG_PRINT("[busmgr] [%u] %s %s", (unsigned int)i,
+                    bus_type_str(r->type), res_name(r));
     }
 }
 #endif

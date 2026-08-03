@@ -36,6 +36,7 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 │   └── userTasks/        # 业务任务示例（事件驱动 + 状态机写法）
 ├── compoent/             # 通用组件：ringBuffer、事件调度器、总线 IO 管理、消抖、命令树、调试宏
 ├── uni-stc/              # uni-STC 库 vendored 副本（寄存器定义 + HAL，许可见其 LICENSE）
+├── tools/                # 构建辅助脚本：stack_usage.py（SDCC 静态栈消耗分析）+ stack_config.json
 ├── tips.txt              # SDCC + STC12 开发笔记
 ├── CMakeLists.txt
 └── build.bat             # 构建入口
@@ -59,14 +60,18 @@ Windows 环境下面向 STC12 系列（8051 内核）MCU 的 **CMake + Ninja + S
 - **SDCC**：编译器，把 C 代码翻译成单片机能运行的机器码（替代 Keil C51 编译器）
 - **CMake**：工程描述工具，读取 `CMakeLists.txt` 生成构建脚本（替代 Keil 的工程文件管理）
 - **Ninja**：构建执行器，按脚本完成编译、链接（替代 Keil 的 F7）
+- **Python 3**：构建后运行的静态栈分析脚本 `tools/stack_usage.py` 的解释器（CMake 配置期强制要求）
 - **clangd**（可选）：编辑器里的代码助手，提供补全与跳转定义
 
-CMake 和 Ninja 均可用 winget 一键安装：
+CMake、Ninja 和 Python 均可用 winget 一键安装：
 
 ```powershell
 winget install --id Kitware.CMake -e
 winget install --id Ninja-build.Ninja -e
+winget install --id Python.Python.3.12 -e
 ```
+
+`stack_usage.py` 只用到 Python 标准库（argparse/json/os/re/subprocess/sys），**无需任何 pip 第三方库**；装好 Python 即可直接运行。若想进一步分析 SDCC 库函数（printf 链等）的栈消耗，还需要 `s51`（ucsim 反汇编器，随 SDCC 一起安装，构建时自动发现，缺失时该部分分析自动跳过）。
 
 SDCC 需要自行到网上下载 Windows 安装程序（本项目基于 SDCC 4.x 验证）：
 
