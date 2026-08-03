@@ -8,7 +8,8 @@
 | 文件 | 职责 |
 |---|---|
 | `doorLock.h/.c` | 门锁核心：管理器 / 门上下文 / 注册 / 检测 / 锁控制 / 请求开门 |
-| `userButton.h/.c` | 按键消抖 + 环形事件队列（缓冲由调用者提供） |
+| `userButton.h/.c` | 按键消抖 + 环形事件队列（缓冲由调用者提供，统一 8 通道） |
+| `btnEventMap.h/.c` | 按键事件映射表：channel+trigger → 业务事件（改表即改按键行为） |
 | `userTask_doorLock.h/.c` | 门锁事件任务：把硬件事件接入事件调度器，含配置状态机 |
 | `userTask_cmds.h` | 桩：仅提供共享调度器句柄 `evtSchedul_ctx` 的 extern 声明 |
 
@@ -42,7 +43,7 @@ doorLock_manager_t  { doors[4]; doorCnt:4; openDoor:4(signed); }  // 各 4 位 �
 | 门按键 `doorButton` | 输入 | 按下 → 触发开该门 |
 | 继电器 `lock` | 输出 | 1=锁 / 0=开 |
 
-另有 **4 个全局配置按键**（`CFG_BTN_INC/DEC/SELECT/ENTER`）配置门锁延时。
+另有 **4 个全局配置按键**（通道 `BTN_CH_CFG_INC/DEC/SELECT/ENTER`）配置门锁延时。
 
 **输入电气与检测方式**：所有输入（门磁 / 门按键 / 配置按键）均为**有源低电平**——
 外部上拉使引脚空闲为高，门就位（0Ω）或按键按下时拉低；IO 配置为**浮空输入**
@@ -58,10 +59,28 @@ INT0(P3.2)/INT1(P3.3) 两个通用外部中断，**无逐脚 GPIO 边沿中断**
 - `EVT_DOORLOCK_TICK`（1ms）：`button_tick` 每 ms 跑；内部 1000 分频出**秒节拍**，
   每秒递减开门超时计数 `lockTimeoutCnt` 与配置空闲计数 `configIdleCnt`。
 - `EVT_DOORLOCK_DETECT`：门磁变化 → 仅更新门状态标志。
-- `EVT_DOORLOCK_DOOR_BTN`：门按键按下 → `doorLock_requestOpen` + 启动 lockDelay 超时。
+- `EVT_DOOR_OPEN_0..3`：门按键释放沿（经 `btnEventMap` 映射）→ `doorLock_requestOpen`
+  + 启动 lockDelay 超时。
+- `EVT_CFG_INC/DEC/SELECT/ENTER`：配置按键（经 `btnEventMap` 映射）→ 配置态动作。
 - `EVT_DOORLOCK_LOCK_TIMEOUT`：超时 → 重新上锁。
-- `EVT_DOORLOCK_BTN_SCAN`：配置按键扫描（见下）。
+- `EVT_DOORLOCK_BTN_SCAN`：按键事件出队 → 查 `btnEventMap` → 投递映射事件。
 - `EVT_DOORLOCK_DISPLAY_REFRESH`：显示刷新（数码管驱动待接入）。
+
+### 按键事件映射（`btnEventMap`）
+
+门按键（通道 0-3）与配置键（通道 4-7）统一进 `userButton` 8 通道框架；`board_bus_poll`
+只做消抖 + `button_push`。任务在 `EVT_DOORLOCK_BTN_SCAN` 里 `button_poll` 取出
+`(channel, press/release)`，查 `btnEventMap` 表得到业务事件再投递给本任务：
+
+| 通道 | 触发 | 事件 |
+|---|---|---|
+| `BTN_CH_DOOR_n` (0-3) | release | `EVT_DOOR_OPEN_n` |
+| `BTN_CH_CFG_INC` (4) | press | `EVT_CFG_INC` |
+| `BTN_CH_CFG_DEC` (5) | press | `EVT_CFG_DEC` |
+| `BTN_CH_CFG_SELECT` (6) | press | `EVT_CFG_SELECT` |
+| `BTN_CH_CFG_ENTER` (7) | press | `EVT_CFG_ENTER` |
+
+改某键的触发行为只需编辑 `btnEventMap.c` 的 `btnEvtMap[]` 表。
 
 ### 配置状态机（4 个全局按键）
 

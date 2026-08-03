@@ -44,8 +44,8 @@
  *
  * Per-input event policy (on debounced edges):
  *   - 门磁   : both edges -> requestDetect (updates door status)
- *   - 门按键 : release edge (low->high) -> requestDoorButton (open the door);
- *              a full press-then-release commits one open event
+ *   - 门按键 : both edges fed to the button framework; the release edge
+ *              (low->high) maps to the per-door open event (see btnEventMap)
  *   - 配置键 : both edges -> onButton(stable level) into the button framework
  *
  * Adjust the io tables below to match the final hardware.
@@ -85,10 +85,10 @@ static const busManage_io_t door3_io[] = {
 
 /* 4 global config buttons: +, -, select door, enter config. */
 static const busManage_io_t button_io[] = {
-    {.port = BUSIO_PORT_P3, .pin = 2},   /* CFG_BTN_INC */
-    {.port = BUSIO_PORT_P3, .pin = 3},   /* CFG_BTN_DEC */
-    {.port = BUSIO_PORT_P3, .pin = 4},   /* CFG_BTN_SELECT */
-    {.port = BUSIO_PORT_P3, .pin = 5},   /* CFG_BTN_ENTER */
+    {.port = BUSIO_PORT_P3, .pin = 2},   /* BTN_CH_CFG_INC */
+    {.port = BUSIO_PORT_P3, .pin = 3},   /* BTN_CH_CFG_DEC */
+    {.port = BUSIO_PORT_P3, .pin = 4},   /* BTN_CH_CFG_SELECT */
+    {.port = BUSIO_PORT_P3, .pin = 5},   /* BTN_CH_CFG_ENTER */
 };
 
 /* ---- resource table (one entry per resource) ---- */
@@ -138,7 +138,8 @@ static const busManage_bus_model_t board_busModel = {
 /* ---- per-input debounce state (initialised in board_bus_init) ---- */
 static debounce_t doorDetectDb[DOORLOCK_DOOR_MAX];   /* 门磁 */
 static debounce_t doorBtnDb[DOORLOCK_DOOR_MAX];      /* 门按键 */
-static debounce_t cfgBtnDb[BUTTON_CNT];              /* 配置按键 */
+#define CFG_KEY_CNT 4
+static debounce_t cfgBtnDb[CFG_KEY_CNT];             /* 配置按键 */
 
 /* ---- helpers ---- */
 
@@ -212,7 +213,7 @@ int board_bus_init(void)
         debounce_init(&doorDetectDb[i], 1);
         debounce_init(&doorBtnDb[i], 1);
     }
-    for (i = 0; i < BUTTON_CNT; i++)
+    for (i = 0; i < CFG_KEY_CNT; i++)
         debounce_init(&cfgBtnDb[i], 1);
 
 #ifdef BUSMANAGE_DEBUG
@@ -305,7 +306,6 @@ void board_bus_poll(void)
     uint16_t now = userTMR_GetTick();
     uint8_t i;
     uint8_t detectMask = 0;
-    uint8_t openMask = 0;
     GpioConfig cfg;
 
     /* Sample every BOARD_POLL_PERIOD_MS, independent of call frequency. */
@@ -322,20 +322,20 @@ void board_bus_poll(void)
     if (detectMask)
         doorLockTask_requestDetect(detectMask);
 
-    /* 门按键: open on release (debounced low -> high). */
+    /* 门按键: any debounced edge -> button framework; the event mapping
+     * (btnEventMap) turns the release edge into the per-door open event. */
     for (i = 0; i < DOORLOCK_DOOR_MAX; i++) {
         io_to_cfg(&door_io[i][1], GPIO_HIGH_IMPEDANCE_MODE, &cfg);
-        if (debounce_sample(&doorBtnDb[i], gpioRead(&cfg)) &&
-            debounce_state(&doorBtnDb[i]) == 1)
-            openMask |= (uint8_t)(1U << i);
+        if (debounce_sample(&doorBtnDb[i], gpioRead(&cfg)))
+            doorLockTask_onButton((unsigned char)(BTN_CH_DOOR_0 + i),
+                                  debounce_state(&doorBtnDb[i]));
     }
-    if (openMask)
-        doorLockTask_requestDoorButton(openMask);
 
-    /* 配置键: debounced edge (both) -> feed the button framework. */
-    for (i = 0; i < BUTTON_CNT; i++) {
+    /* 配置键: debounced edge (both) -> button framework (channels 4..7). */
+    for (i = 0; i < CFG_KEY_CNT; i++) {
         io_to_cfg(&button_io[i], GPIO_HIGH_IMPEDANCE_MODE, &cfg);
         if (debounce_sample(&cfgBtnDb[i], gpioRead(&cfg)))
-            doorLockTask_onButton(i, debounce_state(&cfgBtnDb[i]));
+            doorLockTask_onButton((unsigned char)(BTN_CH_CFG_INC + i),
+                                  debounce_state(&cfgBtnDb[i]));
     }
 }

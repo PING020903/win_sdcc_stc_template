@@ -75,6 +75,7 @@ set(APP_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/src/tickBroadcast.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/doorLock.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userButton.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/btnEventMap.c
     ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_doorLock.c
     # TEMP: command tree disabled for isolation testing
     # ${CMAKE_CURRENT_SOURCE_DIR}/src/userTasks/userTask_cmds.c

@@ -1,5 +1,6 @@
 #include "DBG_macro.h"
 #include "userTask_doorLock.h"
+#include "btnEventMap.h"
 #include "board_bus.h"
 #include "tickBroadcast.h"
 #include "userTask_cmds.h"
@@ -11,7 +12,6 @@ static button_context_t btnCtx;
 static button_rawEvt_t btnEvtBuf[BUTTON_EVT_QUEUE_DEPTH];
 
 static volatile unsigned char detectPending = 0;
-static volatile unsigned char doorBtnPending = 0;
 
 static uint8_t lockTimeoutCnt = 0;     /* seconds */
 static unsigned char lockTimeoutActive = 0;
@@ -38,15 +38,11 @@ void doorLockTask_requestDetect(unsigned char doorMask) {
     doorLockTask_postEvent(EVT_DOORLOCK_DETECT);
 }
 
-/* Called by the board glue when one or more per-door buttons are pressed. */
-void doorLockTask_requestDoorButton(unsigned char doorMask) {
-    doorBtnPending |= doorMask;
-    doorLockTask_postEvent(EVT_DOORLOCK_DOOR_BTN);
-}
-
-/* Called by the board glue on a button level change. */
-void doorLockTask_onButton(unsigned char idx, unsigned char level) {
-    button_push(&btnCtx, idx, level);
+/* Called by the board glue on a debounced button level change. The channel
+ * is a unified button index (door 0-3 / config 4-7); the actual action is
+ * chosen later by the event mapping (btnEventMap). */
+void doorLockTask_onButton(unsigned char channel, unsigned char level) {
+    button_push(&btnCtx, channel, level);
     doorLockTask_postEvent(EVT_DOORLOCK_BTN_SCAN);
 }
 
@@ -67,21 +63,16 @@ static void doorLockTask_handleDetect(void) {
     }
 }
 
-static void doorLockTask_handleDoorButton(void) {
-    unsigned char pending = doorBtnPending;
-    unsigned char i;
-    doorBtnPending = 0;
+static void doorLockTask_handleDoorOpen(unsigned char i) {
+    doorLock_context_t *ctx;
 
-    for (i = 0; i < doorMgr.doorCnt; i++) {
-        doorLock_context_t *ctx;
-        if (!(pending & (1U << i)))
-            continue;
-        ctx = &doorMgr.doors[i];
-        doorLock_requestOpen(&doorMgr, i);
-        if (ctx->hw.time.lockDelaySec > 0) {
-            lockTimeoutCnt = ctx->hw.time.lockDelaySec;
-            lockTimeoutActive = 1;
-        }
+    if (i >= doorMgr.doorCnt)
+        return;
+    ctx = &doorMgr.doors[i];
+    doorLock_requestOpen(&doorMgr, i);
+    if (ctx->hw.time.lockDelaySec > 0) {
+        lockTimeoutCnt = ctx->hw.time.lockDelaySec;
+        lockTimeoutActive = 1;
     }
 }
 
@@ -113,54 +104,59 @@ static void doorLockTask_handleTick(void) {
     }
 }
 
-static void doorLockTask_handleButton(void) {
-    unsigned char idx;
+/* Drain the button queue: resolve each (channel, trigger) through the event
+ * mapping and re-post the mapped business event to this task. */
+static void doorLockTask_handleBtnScan(void) {
+    unsigned char channel;
     button_event_t evt;
-    unsigned char dirty = 0;
 
-    while ((evt = button_poll(&btnCtx, &idx)) != button_event_none) {
-        if (evt != button_event_press)
-            continue;
+    while ((evt = button_poll(&btnCtx, &channel)) != button_event_none) {
+        uint8_t trigger = (evt == button_event_press) ? BTN_TRIG_PRESS : BTN_TRIG_RELEASE;
+        EventSchedul_EventId mapped = btnEventMap_resolve(channel, trigger);
+        if (mapped != EVTSCHEDUL_INVALID_EVT)
+            doorLockTask_postEvent(mapped);
+    }
+}
 
-        if (!configMode) {
-            switch (idx) {
-            case CFG_BTN_SELECT:
-                selectedDoor++;
-                if (selectedDoor >= doorMgr.doorCnt)
-                    selectedDoor = 0;
-                dirty = 1;
-                break;
-            case CFG_BTN_ENTER:
-                configMode = 1;
-                configIdleCnt = CONFIG_IDLE_TIMEOUT_SEC;
-                dirty = 1;
-                break;
-            default:
-                break;
-            }
-        } else {
-            /* config mode: any key press restarts the inactivity timer */
+/* Config-key actions, dispatched from the mapped EVT_CFG_* events. */
+static void doorLockTask_handleConfigKey(EventSchedul_EventId evt) {
+    unsigned char dirty = 1;
+
+    if (!configMode) {
+        switch (evt) {
+        case EVT_CFG_SELECT:
+            selectedDoor++;
+            if (selectedDoor >= doorMgr.doorCnt)
+                selectedDoor = 0;
+            break;
+        case EVT_CFG_ENTER:
+            configMode = 1;
             configIdleCnt = CONFIG_IDLE_TIMEOUT_SEC;
-            switch (idx) {
-            case CFG_BTN_INC: {
-                doorLock_context_t *ctx = &doorMgr.doors[selectedDoor];
-                ctx->hw.time.lockDelaySec += CFG_DELAY_STEP_SEC;
-                dirty = 1;
-            } break;
-            case CFG_BTN_DEC: {
-                doorLock_context_t *ctx = &doorMgr.doors[selectedDoor];
-                if (ctx->hw.time.lockDelaySec >= CFG_DELAY_STEP_SEC)
-                    ctx->hw.time.lockDelaySec -= CFG_DELAY_STEP_SEC;
-                dirty = 1;
-            } break;
-            case CFG_BTN_SELECT:
-            case CFG_BTN_ENTER:
-                configMode = 0;   /* confirm & exit config mode */
-                dirty = 1;
-                break;
-            default:
-                break;
-            }
+            break;
+        default:
+            dirty = 0;
+            break;
+        }
+    } else {
+        /* config mode: any key press restarts the inactivity timer */
+        configIdleCnt = CONFIG_IDLE_TIMEOUT_SEC;
+        switch (evt) {
+        case EVT_CFG_INC: {
+            doorLock_context_t *ctx = &doorMgr.doors[selectedDoor];
+            ctx->hw.time.lockDelaySec += CFG_DELAY_STEP_SEC;
+        } break;
+        case EVT_CFG_DEC: {
+            doorLock_context_t *ctx = &doorMgr.doors[selectedDoor];
+            if (ctx->hw.time.lockDelaySec >= CFG_DELAY_STEP_SEC)
+                ctx->hw.time.lockDelaySec -= CFG_DELAY_STEP_SEC;
+        } break;
+        case EVT_CFG_SELECT:
+        case EVT_CFG_ENTER:
+            configMode = 0;   /* confirm & exit config mode */
+            break;
+        default:
+            dirty = 0;
+            break;
         }
     }
 
@@ -192,18 +188,32 @@ static void doorLockTask(EventSchedul_EventId evt, void *arg) REENTRANT {
         cmds_poll();
 #endif
         doorLockTask_handleTick();
-        doorLockTask_handleButton();
         break;
     case EVT_DOORLOCK_DETECT:
         doorLockTask_handleDetect();
         break;
-    case EVT_DOORLOCK_DOOR_BTN:
-        doorLockTask_handleDoorButton();
+    case EVT_DOOR_OPEN_0:
+        doorLockTask_handleDoorOpen(0);
+        break;
+    case EVT_DOOR_OPEN_1:
+        doorLockTask_handleDoorOpen(1);
+        break;
+    case EVT_DOOR_OPEN_2:
+        doorLockTask_handleDoorOpen(2);
+        break;
+    case EVT_DOOR_OPEN_3:
+        doorLockTask_handleDoorOpen(3);
         break;
     case EVT_DOORLOCK_DISPLAY_REFRESH:
         break;
     case EVT_DOORLOCK_BTN_SCAN:
-        doorLockTask_handleButton();
+        doorLockTask_handleBtnScan();
+        break;
+    case EVT_CFG_INC:
+    case EVT_CFG_DEC:
+    case EVT_CFG_SELECT:
+    case EVT_CFG_ENTER:
+        doorLockTask_handleConfigKey(evt);
         break;
     case EVT_DOORLOCK_LOCK_TIMEOUT:
         doorLockTask_handleLockTimeout();

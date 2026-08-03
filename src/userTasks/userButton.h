@@ -4,7 +4,8 @@
 #include "bus_io_management.h"
 #include "ringBuffer.h"
 
-#define BUTTON_CNT 4
+/* 8 unified channels: per-door buttons 0..3, global config keys 4..7. */
+#define BUTTON_CNT 8
 #define BUTTON_EVT_QUEUE_DEPTH 8
 
 typedef enum {
